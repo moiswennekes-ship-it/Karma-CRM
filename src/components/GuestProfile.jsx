@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import { Avatar, StatusPill, Btn, AIOutputBox, FieldSelect, ALL_STATUSES } from './UI'
 import { useAI } from '../hooks/useAI'
 
-export function GuestProfile({ guest, onStatusChange, onSaveNotes }) {
+export function GuestProfile({ guest, onStatusChange, onSaveNotes, onDelete }) {
   const ai = useAI()
-  const [notes, setNotes] = useState(guest?.notes || '')
+  const [notes, setNotes] = useState(guest.notes || '')
   const [lastAction, setLastAction] = useState(null)
 
   if (!guest) {
@@ -34,6 +34,12 @@ export function GuestProfile({ guest, onStatusChange, onSaveNotes }) {
 
   const handleNoteSave = () => {
     onSaveNotes(guest.id, notes)
+  }
+
+  const handleDelete = () => {
+    if (window.confirm(`Delete ${guest.name}? This cannot be undone.`)) {
+      onDelete(guest.id)
+    }
   }
 
   return (
@@ -146,6 +152,11 @@ export function GuestProfile({ guest, onStatusChange, onSaveNotes }) {
           <Btn variant="ghost" size="sm" onClick={() => handleGen(() => ai.followUp(guest, notes), 'followup')}
             style={{ flex: 1, justifyContent: 'center' }}>
             <i className="ti ti-sparkles" /> AI Follow-Up
+          </Btn>
+        </div>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+          <Btn variant="danger" size="sm" onClick={handleDelete} style={{ width: '100%', justifyContent: 'center' }}>
+            <i className="ti ti-trash" /> Delete Guest
           </Btn>
         </div>
       </div>

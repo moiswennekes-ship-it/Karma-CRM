@@ -18,7 +18,7 @@ const FILTERS = [
   { label: 'Arriving',   key: 'arriving' },
 ]
 
-export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSaveNotes, onNav }) {
+export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSaveNotes, onDelete, onNav }) {
   const [filter, setFilter] = useState('all')
   const [selectedId, setSelectedId] = useState(null)
 
@@ -104,7 +104,7 @@ export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSave
           }}>
             <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)' }}>Guest Profile</div>
           </div>
-          <GuestProfile guest={selected} onStatusChange={onStatusChange} onSaveNotes={onSaveNotes} />
+          <GuestProfile guest={selected} onStatusChange={onStatusChange} onSaveNotes={onSaveNotes} onDelete={onDelete} />
         </div>
       </div>
     </>

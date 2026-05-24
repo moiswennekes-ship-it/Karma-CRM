@@ -34,7 +34,7 @@ const SCREEN_META = {
 }
 
 // ── ALL MEMBERS SCREEN ────────────────────────────────────────
-function GuestsScreen({ guests, onStatusChange, onSaveNotes }) {
+function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete }) {
   const [selectedId, setSelectedId] = useState(null)
   const [filter, setFilter] = useState('all')
 
@@ -71,7 +71,7 @@ function GuestsScreen({ guests, onStatusChange, onSaveNotes }) {
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)' }}>
           Guest Profile
         </div>
-        <GuestProfile guest={selected} onStatusChange={onStatusChange} onSaveNotes={onSaveNotes} />
+        <GuestProfile guest={selected} onStatusChange={onStatusChange} onSaveNotes={onSaveNotes} onDelete={onDelete} />
       </div>
     </div>
   )
@@ -194,7 +194,7 @@ function PipelineScreen({ guests, onNav }) {
 
 // ── APP ROOT ──────────────────────────────────────────────────
 export default function App() {
-  const { guests, loading, error, addGuest, updateStatus, saveNotes, pipelineCounts, todayArrivals } = useGuests()
+  const { guests, loading, error, addGuest, updateStatus, saveNotes, removeGuest, pipelineCounts, todayArrivals } = useGuests()
   const [screen, setScreen] = useState('dashboard')
   const [addOpen, setAddOpen] = useState(false)
 
@@ -298,8 +298,8 @@ export default function App() {
 
         {/* SCREENS */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} onStatusChange={updateStatus} onSaveNotes={saveNotes} onNav={setScreen} />}
-          {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} />}
+          {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onNav={setScreen} />}
+          {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} />}
           {screen === 'arrivals'   && <ArrivalsScreen   guests={guests} onStatusChange={updateStatus} />}
           {screen === 'ai-tools'   && <AIToolsScreen    guests={guests} />}
           {screen === 'objections' && <ObjectionScreen />}
