@@ -1,0 +1,69 @@
+/* ── KARMA CRM — DESIGN TOKENS ─────────────────────────────── */
+/* Import in index.css */
+
+:root {
+  /* Palette */
+  --ink:          #18181A;
+  --ink2:         #3A3A3C;
+  --ink3:         #6E6E73;
+  --ink4:         #AEAEB2;
+  --sand:         #F7F3EE;
+  --sand2:        #EDE7DC;
+  --sand3:        #E0D7C8;
+  --gold:         #B8914A;
+  --gold2:        #D4A855;
+  --gold-light:   #FAF3E7;
+  --ocean:        #1A5F6E;
+  --ocean2:       #2A7D8F;
+  --ocean3:       #3D9BB0;
+  --ocean-light:  #EBF6F8;
+  --palm:         #2D5A3D;
+  --palm-light:   #EAF2ED;
+  --rose:         #C0504A;
+  --rose-light:   #FBF0EF;
+  --amber:        #B8762A;
+  --amber-light:  #FBF5EB;
+
+  /* Borders */
+  --border:       rgba(184, 145, 74, 0.18);
+  --border2:      rgba(184, 145, 74, 0.32);
+
+  /* Shadows */
+  --shadow:       0 1px 3px rgba(24,24,26,.06), 0 4px 16px rgba(24,24,26,.04);
+  --shadow2:      0 2px 8px rgba(24,24,26,.10), 0 8px 32px rgba(24,24,26,.06);
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Jost', system-ui, sans-serif;
+}
+
+/* Avatar colour sets indexed 0–4 */
+.av-0 { background: #EBF6F8; color: #1A5F6E; }
+.av-1 { background: #EAF2ED; color: #2D5A3D; }
+.av-2 { background: #FBF0EF; color: #C0504A; }
+.av-3 { background: #FBF5EB; color: #B8762A; }
+.av-4 { background: #F0EDFC; color: #5A3DB8; }
+
+/* Status pills */
+.sp { padding: 3px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+.sp-arriving  { background: #EBF6F8; color: #1A5F6E; }
+.sp-contacted { background: #F3F2EE; color: #6E6E73; }
+.sp-meeting   { background: #FBF5EB; color: #B8762A; }
+.sp-followup  { background: #FBF0EF; color: #C0504A; }
+.sp-hot       { background: #FBF0EF; color: #C0504A; }
+.sp-proposal  { background: #EAF2ED; color: #2D5A3D; }
+.sp-converted { background: #EAF2ED; color: #2D5A3D; }
+
+/* Dot-pulse loading animation */
+@keyframes dp {
+  0%, 80%, 100% { opacity: .2; transform: scale(.8); }
+  40%           { opacity: 1;  transform: scale(1);   }
+}
+.dot-pulse { display: flex; gap: 4px; }
+.dot-pulse span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--ocean);
+  animation: dp 1s ease-in-out infinite;
+}
+.dot-pulse span:nth-child(2) { animation-delay: .15s; }
+.dot-pulse span:nth-child(3) { animation-delay: .30s; }
