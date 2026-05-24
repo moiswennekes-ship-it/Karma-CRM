@@ -4,7 +4,7 @@ import { useAI } from '../hooks/useAI'
 
 export function GuestProfile({ guest, onStatusChange, onSaveNotes, onDelete }) {
   const ai = useAI()
-  const [notes, setNotes] = useState(guest.notes || '')
+  const [notes, setNotes] = useState(guest ? (guest.notes || '') : '')
   const [lastAction, setLastAction] = useState(null)
 
   if (!guest) {
