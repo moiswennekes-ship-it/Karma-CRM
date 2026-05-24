@@ -6,6 +6,7 @@ import { AddGuestModal } from './components/AddGuestModal'
 import { GuestCard } from './components/GuestCard'
 import { GuestProfile } from './components/GuestProfile'
 import { Btn, SectionHeader, StatusPill, Avatar } from './components/UI'
+import { ImportScreen } from './components/ImportScreen'
 
 // ── NAVIGATION CONFIG ─────────────────────────────────────────
 const NAV = [
@@ -19,7 +20,9 @@ const NAV = [
   { id: 'calculator', icon: 'ti-calculator',         label: 'Fee Calculator' },
   { id: 'comparison', icon: 'ti-git-compare',        label: 'Fractional Compare' },
   { section: 'Reports' },
-  { id: 'pipeline',   icon: 'ti-chart-bar',          label: 'Pipeline View' },
+ 
+{ id: 'import', icon: 'ti-table-import', label: 'Import Leadsheet' }, 
+{ id: 'pipeline',   icon: 'ti-chart-bar',          label: 'Pipeline View' },
 ]
 
 const SCREEN_META = {
@@ -306,6 +309,7 @@ export default function App() {
           {screen === 'calculator' && <CalculatorScreen />}
           {screen === 'comparison' && <ComparisonScreen />}
           {screen === 'pipeline'   && <PipelineScreen   guests={guests} onNav={setScreen} />}
+  {screen === 'import' && <ImportScreen onImport={addGuest} />}
         </div>
       </div>
 
