@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { GuestCard } from '../components/GuestCard'
 import { GuestProfile } from '../components/GuestProfile'
 import { StatCard, SectionHeader, Btn } from '../components/UI'
+import { MorningBriefing } from '../components/MorningBriefing'
 
 const PIPELINE_STAGES = [
   { label: 'Arriving Soon', icon: 'ti-plane-arrival', color: '#1A5F6E', bg: '#EBF6F8', key: 'arriving' },
@@ -33,6 +34,11 @@ export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSave
 
   return (
     <>
+      {/* Morning Briefing */}
+      <div style={{ padding: '14px 20px 0', flexShrink: 0 }}>
+        <MorningBriefing guests={guests} />
+      </div>
+
       {/* Stats bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <StatCard label="Arriving Today" value={pipelineCounts.arriving} hint="↑ check in queue" hintColor="var(--ocean)" onClick={() => onNav('arrivals')} />
