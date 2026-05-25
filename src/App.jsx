@@ -7,6 +7,7 @@ import { GuestCard } from './components/GuestCard'
 import { GuestProfile } from './components/GuestProfile'
 import { Btn, SectionHeader, StatusPill, Avatar } from './components/UI'
 import { ImportScreen } from './components/ImportScreen'
+import { WeekHistoryScreen } from './components/WeekHistoryScreen'
 
 // ── NAVIGATION CONFIG ─────────────────────────────────────────
 const NAV = [
@@ -14,15 +15,15 @@ const NAV = [
   { id: 'dashboard',   icon: 'ti-layout-dashboard', label: 'Dashboard' },
   { id: 'guests',      icon: 'ti-users',             label: 'All Members',    badge: 'count' },
   { id: 'arrivals',    icon: 'ti-plane-arrival',     label: 'Arrivals Today', badge: 'arriving', badgeColor: '#B8914A' },
+  { id: 'import',      icon: 'ti-table-import',      label: 'Import Leadsheet' },
   { section: 'AI Tools' },
   { id: 'ai-tools',   icon: 'ti-sparkles',           label: 'AI Generator' },
   { id: 'objections', icon: 'ti-shield',             label: 'Objection Handler' },
   { id: 'calculator', icon: 'ti-calculator',         label: 'Fee Calculator' },
   { id: 'comparison', icon: 'ti-git-compare',        label: 'Fractional Compare' },
   { section: 'Reports' },
- 
-{ id: 'import', icon: 'ti-table-import', label: 'Import Leadsheet' }, 
-{ id: 'pipeline',   icon: 'ti-chart-bar',          label: 'Pipeline View' },
+  { id: 'weeks',      icon: 'ti-history',              label: 'Week History' },
+  { id: 'pipeline',   icon: 'ti-chart-bar',            label: 'Pipeline View' },
 ]
 
 const SCREEN_META = {
@@ -33,6 +34,8 @@ const SCREEN_META = {
   objections:  { title: 'Objection Handler',    sub: 'AI-crafted responses to any membership objection' },
   calculator:  { title: 'Fee Calculator',       sub: 'Project long-term costs — 5, 10, and 25-year views' },
   comparison:  { title: 'Fractional Comparison', sub: 'Side-by-side 10-year comparison of membership vs fractional' },
+  import:     { title: 'Import Leadsheet',   sub: 'Paste your weekly leadsheet and import all guests automatically' },
+  weeks:      { title: 'Week History',        sub: 'View past weeks, start a new week, and track your conversion history' },
   pipeline:    { title: 'Pipeline View',        sub: 'All active guests grouped by stage' },
 }
 
@@ -200,6 +203,7 @@ export default function App() {
   const { guests, loading, error, addGuest, updateStatus, saveNotes, removeGuest, pipelineCounts, todayArrivals } = useGuests()
   const [screen, setScreen] = useState('dashboard')
   const [addOpen, setAddOpen] = useState(false)
+  const [currentWeek, setCurrentWeek] = useState(21)
 
   const meta = SCREEN_META[screen] || SCREEN_META.dashboard
 
@@ -309,7 +313,8 @@ export default function App() {
           {screen === 'calculator' && <CalculatorScreen />}
           {screen === 'comparison' && <ComparisonScreen />}
           {screen === 'pipeline'   && <PipelineScreen   guests={guests} onNav={setScreen} />}
-  {screen === 'import' && <ImportScreen onImport={addGuest} />}
+          {screen === 'import'    && <ImportScreen onImport={(g) => addGuest({ ...g, week_number: currentWeek, week_label: `Week ${currentWeek}` })} />}
+          {screen === 'weeks'     && <WeekHistoryScreen currentWeek={currentWeek} onStartNewWeek={(wk) => { setCurrentWeek(wk); setScreen('dashboard') }} />}
         </div>
       </div>
 

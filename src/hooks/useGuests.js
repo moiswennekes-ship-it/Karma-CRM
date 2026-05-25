@@ -65,8 +65,10 @@ export function useGuests() {
 
   // Update a guest field or fields
   const editGuest = useCallback(async (id, updates) => {
+    // Immediately update local state for instant UI
+    setGuests(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g))
+    // Then persist to database
     const updated = await updateGuest(id, updates)
-    // Log status changes as interactions
     if (updates.status) {
       await logInteraction({
         guest_id: id,
@@ -89,6 +91,9 @@ export function useGuests() {
 
   // Remove a guest
   const removeGuest = useCallback(async (id) => {
+    // Immediately remove from local state for instant UI update
+    setGuests(prev => prev.filter(g => g.id !== id))
+    // Then delete from database
     await deleteGuest(id)
   }, [])
 
