@@ -139,6 +139,18 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
     }
   }
 
+  async function deleteWeek(weekNum, weekLabel) {
+    if (!window.confirm(`Delete ${weekLabel} and all its guest records permanently? This cannot be undone.`)) return
+    // Delete all guests from this week
+    await supabase.from('guests').delete().eq('week_number', weekNum)
+    // Delete the week record
+    await supabase.from('weeks').delete().eq('week_number', weekNum)
+    // Remove from local cache
+    setGuestsByWeek(prev => { const n = { ...prev }; delete n[weekNum]; return n })
+    setExpandedWeek(null)
+    await loadWeeks()
+  }
+
   const activeWeek = weeks.find(w => w.status === 'active') || { week_number: currentWeek, week_label: `Week ${currentWeek}`, status: 'active' }
   const pastWeeks = weeks.filter(w => w.status === 'archived')
   const currentGuests = guestsByWeek[currentWeek] || []
@@ -185,7 +197,19 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
                 <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
               </div>
             ))}
-            <i className={`ti ti-chevron-${isExpanded ? 'up' : 'down'}`} style={{ fontSize: 16, color: 'var(--ink3)', marginLeft: 8 }} />
+            {!isCurrent && (
+              <button
+                onClick={e => { e.stopPropagation(); deleteWeek(week.week_number, week.week_label) }}
+                style={{
+                  background: 'var(--rose-light)', color: 'var(--rose)',
+                  border: '1px solid rgba(192,80,74,.2)', borderRadius: 8,
+                  padding: '6px 10px', cursor: 'pointer', fontSize: 11,
+                  fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                <i className="ti ti-trash" style={{ fontSize: 13 }} /> Delete
+              </button>
+            )}
+            <i className={`ti ti-chevron-${isExpanded ? 'up' : 'down'}`} style={{ fontSize: 16, color: 'var(--ink3)' }} />
           </div>
         </div>
 
