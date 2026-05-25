@@ -1,26 +1,27 @@
 import React, { useState } from 'react'
-import { useAI } from '../hooks/useAI'
+import { isToday, isLeavingSoon, hasLeft, daysUntilDeparture, isInHouse } from '../lib/dates'
 
 export function MorningBriefing({ guests }) {
   const [expanded, setExpanded] = useState(false)
   const [briefing, setBriefing] = useState('')
   const [loading, setLoading] = useState(false)
-  const ai = useAI()
 
   const today = new Date()
   const dayName = today.toLocaleDateString('en-US', { weekday: 'long' })
   const dateName = today.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })
 
-  // Calculate priority actions
-  const arrivingToday = guests.filter(g => g.arrival_date?.toLowerCase().includes('today'))
-  const notContacted = guests.filter(g => g.status === 'Arriving Soon')
-  const followUps = guests.filter(g => g.status === 'Follow-Up')
-  const meetingsToday = guests.filter(g => g.status === 'Meeting Booked')
-  const hotLeads = guests.filter(g => g.upgrade_score >= 75 && g.status !== 'Converted')
-  const leavingSoon = guests.filter(g => {
-    const nights = g.nights || 0
-    return nights <= 2 && g.status !== 'Converted' && g.upgrade_score >= 50
-  })
+  // Use real date comparisons
+  const activeGuests = guests.filter(g => !hasLeft(g.depart_date))
+  const arrivingToday = guests.filter(g => isToday(g.arrival_date))
+  const inHouse = guests.filter(g => isInHouse(g.arrival_date, g.depart_date))
+  const notContacted = activeGuests.filter(g => g.status === 'Arriving Soon')
+  const followUps = activeGuests.filter(g => g.status === 'Follow-Up')
+  const meetingsToday = activeGuests.filter(g => g.status === 'Meeting Booked')
+  const hotLeads = activeGuests.filter(g => g.upgrade_score >= 75 && g.status !== 'Converted')
+  const leavingSoon = inHouse.filter(g =>
+    isLeavingSoon(g.depart_date, 2) && g.status !== 'Converted' && g.upgrade_score >= 50
+  )
+  const departed = guests.filter(g => hasLeft(g.depart_date))
 
   const totalActions = notContacted.length + followUps.length + leavingSoon.length
 
@@ -32,18 +33,20 @@ export function MorningBriefing({ guests }) {
 
 Today is ${dayName}, ${dateName}.
 
-Current pipeline:
+Current pipeline (active guests only — departed guests excluded):
+- ${inHouse.length} guests currently in house
 - ${arrivingToday.length} guests arriving today: ${arrivingToday.map(g => g.name).join(', ') || 'none'}
 - ${notContacted.length} guests not yet contacted: ${notContacted.map(g => g.name).join(', ') || 'none'}
 - ${followUps.length} guests needing follow-up: ${followUps.map(g => g.name).join(', ') || 'none'}
 - ${meetingsToday.length} meetings booked: ${meetingsToday.map(g => g.name).join(', ') || 'none'}
 - ${hotLeads.length} hot leads: ${hotLeads.map(g => `${g.name} (${g.upgrade_score}%)`).join(', ') || 'none'}
-- ${leavingSoon.length} high-value guests leaving soon: ${leavingSoon.map(g => g.name).join(', ') || 'none'}
+- ${leavingSoon.length} high-value guests leaving in 2 days or less: ${leavingSoon.map(g => `${g.name} (${daysUntilDeparture(g.depart_date)} days left)`).join(', ') || 'none'}
+- ${departed.length} guests have already departed
 
-Write a warm, direct morning briefing (not bullet points — flowing prose, 3-4 short paragraphs). 
+Write a warm, direct morning briefing (3-4 short paragraphs, not bullet points).
 - Start with a one-line summary of the day
 - Name the 2-3 most important guests to prioritise and why
-- Flag anyone leaving soon who hasn't been approached
+- Flag anyone leaving very soon who hasn't converted
 - End with one motivating sentence
 
 Keep it under 200 words. Sound like a knowledgeable colleague, not a robot.`

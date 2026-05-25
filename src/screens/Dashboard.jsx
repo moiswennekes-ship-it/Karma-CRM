@@ -3,6 +3,7 @@ import { GuestCard } from '../components/GuestCard'
 import { GuestProfile } from '../components/GuestProfile'
 import { StatCard, SectionHeader, Btn } from '../components/UI'
 import { MorningBriefing } from '../components/MorningBriefing'
+import { hasLeft, isLeavingSoon, isToday } from '../lib/dates'
 
 const PIPELINE_STAGES = [
   { label: 'Arriving Soon', icon: 'ti-plane-arrival', color: '#1A5F6E', bg: '#EBF6F8', key: 'arriving' },
@@ -13,10 +14,11 @@ const PIPELINE_STAGES = [
 ]
 
 const FILTERS = [
-  { label: 'All',        key: 'all' },
-  { label: 'Hot Leads',  key: 'hot' },
-  { label: 'Follow-Up',  key: 'followup' },
-  { label: 'Arriving',   key: 'arriving' },
+  { label: 'All',           key: 'all' },
+  { label: 'Hot Leads',     key: 'hot' },
+  { label: 'Follow-Up',     key: 'followup' },
+  { label: 'Arriving',      key: 'arriving' },
+  { label: 'Leaving Soon',  key: 'leaving' },
 ]
 
 export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSaveNotes, onDelete, onEdit, onNav }) {
@@ -24,10 +26,11 @@ export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSave
   const [selectedId, setSelectedId] = useState(null)
 
   const filtered = guests.filter(g => {
-    if (filter === 'hot') return g.upgrade_score >= 65
-    if (filter === 'followup') return ['Follow-Up', 'Meeting Booked', 'Contacted'].includes(g.status)
-    if (filter === 'arriving') return g.arrival_date?.toLowerCase().includes('today')
-    return true
+    if (filter === 'hot') return g.upgrade_score >= 65 && !hasLeft(g.depart_date)
+    if (filter === 'followup') return ['Follow-Up', 'Meeting Booked', 'Contacted'].includes(g.status) && !hasLeft(g.depart_date)
+    if (filter === 'arriving') return isToday(g.arrival_date)
+    if (filter === 'leaving') return isLeavingSoon(g.depart_date, 2) && !hasLeft(g.depart_date)
+    return true // 'all' shows everyone including departed
   })
 
   const selected = guests.find(g => g.id === selectedId)
