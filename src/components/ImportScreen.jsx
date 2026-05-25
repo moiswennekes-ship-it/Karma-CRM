@@ -1,61 +1,51 @@
 import React, { useState } from 'react'
 import { Btn, Card, CardHeader, CardBody, SectionHeader } from './UI'
 
-// Column indices (0-based) based on actual leadsheet layout:
-// A=0 Name, B=1 VP ID, C=2 Room, D=3 Arrival, E=4 Depart, F=5 Nights
-// G=6 Booking Number, H=7, I=8, J=9, K=10 (ignored)
-// L=11 Membership Details, M=12 Nationality, N=13 Linked Stay
-// O=14 Linked Stay Detail, P=15 Email, Q=16 Phone, R=17 Rep
-// S=18 Appoint Date, T=19 Appoint Time, U=20 Tour/No tour
-// V=21 Tour Updated, W=22 Product, X=23 Deal $
-// Notes column = last meaningful column (varies, we grab from col 24+)
+// ── COLUMN MAP (0-based) ──────────────────────────────────────
+// A=0  Name
+// B=1  VP ID (member number)
+// C=2  Room No
+// D=3  Arrival
+// E=4  Depart
+// F=5  Nights
+// G=6  Booking Number
+// L=11 Membership Details
+// M=12 Nationality
+// N=13 Linked Stay (YES/NO)
+// O=14 Linked Stay Detail (FROM KM, TO KJ etc)
+// P=15 Email
+// Q=16 Phone/WhatsApp
+// R=17 Rep (ignored)
+// S=18 Appoint Date
+// T=19 Appoint Time
+// U=20 Tour/No tour
+// Notes = col 24+ (first non-empty, non-boolean value)
 
-function getCol(cols, idx) {
+function col(cols, idx) {
   return (cols[idx] || '').trim()
 }
 
 function detectMemberType(membership) {
   if (!membership) return 'KC Member'
   const m = membership.toLowerCase()
-  if (m.includes('krk') || m.includes('km/') || m.includes('kb/') || m.includes('kk/') || m.includes('t0f') || m.includes('t1f') || m.includes('t2f')) return 'Fractional Owner'
-  if (m.includes('karma club discovery')) return 'KC Member'
+  // Fractional patterns: KRK, KM/, KB/, KK/, KRS, KJ, T0F, T1F, T2F
+  if (/^k[a-z]{1,3}\s*\//.test(m) || m.includes('t0f') || m.includes('t1f') || m.includes('t2f')) {
+    return 'Fractional Owner'
+  }
   return 'KC Member'
 }
 
-function parseYears(membership) {
-  const match = (membership || '').match(/(\d+)\s*years?/i)
-  return match ? parseInt(match[1]) : 0
-}
-
-function detectStatus(notes, tourDate, tourTime, tourNoTour) {
+function detectStatus(notes, apptDate, tourCol) {
   const n = (notes || '').toLowerCase()
-  const t = (tourNoTour || '').toLowerCase()
+  const t = (tourCol || '').toLowerCase()
   if (n.includes('no deal') || t.includes('no deal')) return 'Contacted'
   if (n.includes('toured') || n.includes('be toured')) return 'Contacted'
-  if (tourDate && tourDate.length > 3) return 'Meeting Booked'
+  if (apptDate && apptDate.length > 3) return 'Meeting Booked'
   if (n.includes('on price')) return 'Follow-Up'
-  if (n.includes('good shot')) return 'Hot Lead'
-  if (n.includes('cancelled a fractional')) return 'Hot Lead'
+  if (n.includes('good shot') || n.includes('cancelled a fractional')) return 'Hot Lead'
   if (n.includes('welcome email') || n.includes('whatsapp sent')) return 'Contacted'
   if (n.includes('book tour')) return 'Arriving Soon'
   return 'Arriving Soon'
-}
-
-function calcScore(memberType, years, notes, tourDate) {
-  let score = 40
-  if (memberType === 'Fractional Owner') score += 10
-  if (years >= 15) score += 15
-  else if (years >= 8) score += 10
-  else if (years >= 3) score += 5
-  const n = (notes || '').toLowerCase()
-  if (n.includes('good shot')) score += 20
-  if (n.includes('cancelled a fractional')) score += 15
-  if (n.includes('no deal')) score = Math.max(5, score - 35)
-  if (n.includes('no interest')) score = Math.max(5, score - 25)
-  if (n.includes('book tour')) score += 8
-  if (tourDate && tourDate.length > 3) score += 10
-  if (n.includes('only here for') && n.includes('days')) score += 5
-  return Math.min(95, Math.max(5, score))
 }
 
 function parseLeadsheet(text) {
@@ -65,48 +55,58 @@ function parseLeadsheet(text) {
 
   for (const line of lines) {
     const cols = line.split('\t')
-    if (cols.length < 6) continue
+    if (cols.length < 5) continue
 
-    const name = getCol(cols, 0)
+    const name = col(cols, 0)
     if (!name) continue
-    // Skip header rows and section headers
-    if (name.toLowerCase().includes('karma kandara') ||
-        name.toLowerCase().includes('karma group') ||
-        name.toLowerCase().includes('kc member') ||
-        name.toLowerCase().includes('fractional') ||
-        name.toLowerCase() === 'name') continue
-    // Skip if name looks like a number or booking ref
-    if (/^\d+/.test(name)) continue
 
-    const vpId = getCol(cols, 1)
-    const room = getCol(cols, 2)
-    const arrival = getCol(cols, 3)
-    const depart = getCol(cols, 4)
-    const nights = parseInt(getCol(cols, 5)) || 0
-    const bookingNum = getCol(cols, 6)
-    const membership = getCol(cols, 11)
-    const nationality = getCol(cols, 12)
-    const linkedStay = getCol(cols, 13)
-    const linkedDetail = getCol(cols, 14)
-    const email = getCol(cols, 15)
-    const phone = getCol(cols, 16)
-    const rep = getCol(cols, 17)
-    const apptDate = getCol(cols, 18)
-    const apptTime = getCol(cols, 19)
-    const tourNoTour = getCol(cols, 20)
-    // Notes - grab from col 24 onwards, join any non-empty ones
-    const noteParts = []
-    for (let i = 24; i < cols.length; i++) {
+    // Skip headers and section labels
+    if (
+      name.toLowerCase().includes('karma') ||
+      name.toLowerCase() === 'name' ||
+      name.toLowerCase() === 'kc member' ||
+      name.toLowerCase() === 'fractional owner' ||
+      /^\d{5,}/.test(name)
+    ) continue
+
+    const vpId        = col(cols, 1)
+    const room        = col(cols, 2)
+    const arrival     = col(cols, 3)
+    const depart      = col(cols, 4)
+    const nights      = parseInt(col(cols, 5)) || 0
+    const bookingNum  = col(cols, 6)
+    const membership  = col(cols, 11)
+    const nationality = col(cols, 12)
+    const linkedStay  = col(cols, 13)  // YES / NO
+    const linkedDetail = col(cols, 14) // FROM KM, TO KJ, 2nd weeks etc
+    const email       = col(cols, 15)
+    const phone       = col(cols, 16)
+    const apptDate    = col(cols, 18)
+    const apptTime    = col(cols, 19)
+    const tourCol     = col(cols, 20)
+
+    // Notes: grab first meaningful value from col 24 onwards
+    let notes = ''
+    for (let i = 24; i < Math.min(cols.length, 35); i++) {
       const v = (cols[i] || '').trim()
-      if (v && v !== 'FALSE' && v !== 'TRUE' && v !== 'YES' && v !== 'NO') noteParts.push(v)
+      if (v && v !== 'FALSE' && v !== 'TRUE' && v !== 'YES' && v !== 'NO' && v.length > 3) {
+        notes = v
+        break
+      }
     }
-    const notes = noteParts.join(' — ').trim()
 
     const memberType = detectMemberType(membership)
-    const years = parseYears(membership)
+
+    // Build linked stay display
+    let linkedDisplay = ''
+    if (linkedStay === 'YES' && linkedDetail && linkedDetail !== 'YES') {
+      linkedDisplay = linkedDetail
+    } else if (linkedStay === 'YES') {
+      linkedDisplay = 'YES'
+    }
 
     if (guestMap[name]) {
-      // Duplicate — same guest, additional booking
+      // Duplicate row — same guest, additional booking
       const g = guestMap[name]
       if (bookingNum && !g.bookingNumbers.includes(bookingNum)) {
         g.bookingNumbers.push(bookingNum)
@@ -114,32 +114,16 @@ function parseLeadsheet(text) {
       if (membership && !g.memberships.includes(membership)) {
         g.memberships.push(membership)
       }
-      // Keep longest notes
       if (notes && notes.length > (g.notes || '').length) g.notes = notes
-      // Keep latest appt if present
       if (apptDate && apptDate.length > 3) { g.apptDate = apptDate; g.apptTime = apptTime }
     } else {
       guestMap[name] = {
-        name,
-        vpId,
-        room,
-        arrival,
-        depart,
-        nights,
+        name, vpId, room, arrival, depart, nights,
         bookingNumbers: bookingNum ? [bookingNum] : [],
         memberships: membership ? [membership] : [],
-        memberType,
-        years,
-        nationality,
-        linkedStay,
-        linkedDetail,
-        email,
-        phone,
-        rep,
-        apptDate,
-        apptTime,
-        tourNoTour,
-        notes,
+        memberType, nationality,
+        linkedStay: linkedDisplay,
+        email, phone, apptDate, apptTime, tourCol, notes,
       }
       guestOrder.push(name)
     }
@@ -147,22 +131,16 @@ function parseLeadsheet(text) {
 
   return guestOrder.map((name, i) => {
     const g = guestMap[name]
-    const memberType = g.memberType
-    const status = detectStatus(g.notes, g.apptDate, g.apptTime, g.tourNoTour)
-    const score = calcScore(memberType, g.years, g.notes, g.apptDate)
+    const membership = g.memberships.join(' + ') || g.memberType
+    const memberType = detectMemberType(g.memberships[0] || '')
+    const status = detectStatus(g.notes, g.apptDate, g.tourCol)
     const initials = name.split(/\s+/).filter(Boolean).map(w => w[0]?.toUpperCase()).slice(0, 2).join('')
-    const membership = g.memberships.join(' + ') || memberType
-
-    // Build party string from linked stay detail
-    let party = g.nationality || ''
-    if (g.linkedDetail && g.linkedDetail !== 'NO') party = g.linkedDetail
-
-    // Last stay from years
-    const lastStay = g.years ? `${g.years} year${g.years !== 1 ? 's' : ''} as member` : 'Unknown'
 
     return {
       name,
       initials,
+      member_number: g.vpId,
+      room: g.room,
       membership,
       member_type: memberType,
       arrival_date: g.arrival,
@@ -170,16 +148,16 @@ function parseLeadsheet(text) {
       nights: g.nights,
       email: g.email,
       whatsapp: g.phone,
+      nationality: g.nationality,
+      linked_stay: g.linkedStay,
       notes: g.notes,
       status,
-      upgrade_score: score,
-      party,
-      last_stay: lastStay,
-      nationality: g.nationality,
-      room: g.room,
-      booking_numbers: g.bookingNumbers.join(', '),
+      upgrade_score: 0,
+      party: g.nationality || '',
+      last_stay: '',
       color_index: i % 5,
       tags: [],
+      booking_numbers: g.bookingNumbers.join(', '),
     }
   })
 }
@@ -215,12 +193,12 @@ export function ImportScreen({ onImport }) {
       setParsed(guests)
       setDone(false)
     } catch(e) {
-      setError('Could not parse the leadsheet. Make sure you copied the data rows from Google Sheets.')
+      setError('Could not parse. Make sure you copied the guest rows from Google Sheets.')
     }
   }
 
   const handleImport = async () => {
-    if (!parsed || !parsed.length) return
+    if (!parsed?.length) return
     setImporting(true)
     try {
       for (const guest of parsed) {
@@ -240,7 +218,7 @@ export function ImportScreen({ onImport }) {
     <div style={{ overflowY: 'auto', padding: 22, flex: 1 }}>
       <SectionHeader title="Weekly Leadsheet Import" />
       <p style={{ fontSize: 12, color: 'var(--ink3)', marginBottom: 20, lineHeight: 1.6 }}>
-        In Google Sheets, select all guest rows (not the header rows), copy with <strong>Ctrl+C</strong>, then paste below and click Parse. Guests with multiple bookings are automatically merged into one profile.
+        In Google Sheets, select all guest rows (not the header rows), copy with <strong>Ctrl+C</strong>, paste below and click Parse. Guests with multiple bookings are automatically merged.
       </p>
 
       {done && (
@@ -266,7 +244,7 @@ export function ImportScreen({ onImport }) {
             <textarea
               value={text}
               onChange={e => setText(e.target.value)}
-              placeholder="Select your guest rows in Google Sheets → Ctrl+C → click here → Ctrl+V"
+              placeholder="Select guest rows in Google Sheets → Ctrl+C → click here → Ctrl+V"
               style={{
                 width: '100%', border: '1px solid var(--border2)', borderRadius: 8,
                 padding: '12px', fontFamily: 'var(--font-body)', fontSize: 12,
@@ -286,7 +264,7 @@ export function ImportScreen({ onImport }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
               <div style={{ fontWeight: 500, fontSize: 14 }}>{parsed.length} guests detected</div>
-              <div style={{ fontSize: 12, color: 'var(--ink3)' }}>Review below then click Import All to add to your pipeline.</div>
+              <div style={{ fontSize: 12, color: 'var(--ink3)' }}>Review then click Import All to add to your pipeline.</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Btn variant="ghost" size="sm" onClick={() => { setParsed(null); setError(null) }}>
@@ -302,38 +280,37 @@ export function ImportScreen({ onImport }) {
             {parsed.map((g, i) => {
               const ac = AVATAR_COLORS[i % AVATAR_COLORS.length]
               const sc = STATUS_CFG[g.status] || STATUS_CFG['Arriving Soon']
-              const scoreColor = g.upgrade_score > 70 ? '#C0504A' : g.upgrade_score > 50 ? '#B8762A' : '#AEAEB2'
               return (
                 <div key={i} style={{
                   background: 'white', borderRadius: 12, border: '1px solid var(--border)',
                   padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start',
                 }}>
                   <div style={{
-                    width: 38, height: 38, borderRadius: '50%',
+                    width: 40, height: 40, borderRadius: '50%',
                     background: ac.bg, color: ac.color,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 500, flexShrink: 0,
+                    fontSize: 13, fontWeight: 500, flexShrink: 0,
                   }}>{g.initials}</div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 500, fontSize: 13.5, marginBottom: 3 }}>{g.name}</div>
-                    <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-                      <span><i className="ti ti-diamond" style={{ fontSize: 12 }} /> {g.member_type}</span>
-                      <span><i className="ti ti-calendar" style={{ fontSize: 12 }} /> {g.arrival_date} → {g.depart_date}</span>
-                      <span><i className="ti ti-moon" style={{ fontSize: 12 }} /> {g.nights} nights</span>
-                      {g.nationality && <span><i className="ti ti-flag" style={{ fontSize: 12 }} /> {g.nationality}</span>}
-                      {g.email && <span><i className="ti ti-mail" style={{ fontSize: 12 }} /> {g.email}</span>}
+                    <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                      {g.member_number && <span>#{g.member_number}</span>}
+                      {g.room && <span>· Rm {g.room}</span>}
+                      <span>· {g.member_type}</span>
+                      <span>· {g.arrival_date} → {g.depart_date}</span>
+                      <span>· {g.nights} nights</span>
+                      {g.nationality && <span>· {g.nationality}</span>}
+                      {g.linked_stay && <span>· 🔗 {g.linked_stay}</span>}
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--ink3)', fontStyle: 'italic', marginBottom: g.notes ? 4 : 0 }}>{g.membership}</div>
-                    {g.notes && <div style={{ fontSize: 11.5, color: 'var(--ink2)' }}>{g.notes}</div>}
+                    {g.email && <div style={{ fontSize: 11, color: 'var(--ocean)' }}>{g.email}{g.whatsapp ? ` · ${g.whatsapp}` : ''}</div>}
+                    {g.notes && <div style={{ fontSize: 11.5, color: 'var(--ink2)', marginTop: 4 }}>{g.notes}</div>}
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                    <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color }}>
-                      {g.status}
-                    </span>
-                    <div style={{ fontSize: 11, color: scoreColor }}>↑ {g.upgrade_score}%</div>
-                  </div>
+                  <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color, flexShrink: 0 }}>
+                    {g.status}
+                  </span>
                 </div>
               )
             })}
@@ -344,7 +321,7 @@ export function ImportScreen({ onImport }) {
       {parsed && parsed.length === 0 && (
         <div style={{ textAlign: 'center', padding: 40, color: 'var(--ink4)' }}>
           <i className="ti ti-alert-circle" style={{ fontSize: 36, display: 'block', marginBottom: 12 }} />
-          <p style={{ fontSize: 13 }}>No guests detected. Make sure you selected the guest data rows (not the header).</p>
+          <p style={{ fontSize: 13 }}>No guests detected. Make sure you selected the guest data rows.</p>
           <Btn variant="ghost" size="sm" onClick={() => setParsed(null)} style={{ marginTop: 12 }}>Try again</Btn>
         </div>
       )}
