@@ -197,8 +197,7 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
                 <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
               </div>
             ))}
-            {!isCurrent && (
-              <button
+            <button
                 onClick={e => { e.stopPropagation(); deleteWeek(week.week_number, week.week_label) }}
                 style={{
                   background: 'var(--rose-light)', color: 'var(--rose)',
@@ -208,7 +207,6 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
                 }}>
                 <i className="ti ti-trash" style={{ fontSize: 13 }} /> Delete
               </button>
-            )}
             <i className={`ti ti-chevron-${isExpanded ? 'up' : 'down'}`} style={{ fontSize: 16, color: 'var(--ink3)' }} />
           </div>
         </div>
