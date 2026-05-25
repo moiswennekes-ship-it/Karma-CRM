@@ -35,6 +35,14 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
     loadWeeks()
   }, [])
 
+  useEffect(() => {
+    // Auto-load current week guests on mount
+    if (currentWeek) {
+      loadWeekGuests(currentWeek)
+      setSelectedWeek({ week_number: currentWeek, week_label: `Week ${currentWeek}`, status: 'active' })
+    }
+  }, [currentWeek])
+
   async function loadWeeks() {
     setLoading(true)
     const { data } = await supabase
@@ -46,11 +54,14 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
   }
 
   async function loadWeekGuests(weekNum) {
-    const { data } = await supabase
-      .from('guests')
-      .select('*')
-      .eq('week_number', weekNum)
-      .order('created_at', { ascending: true })
+    // Load guests for this week, including guests with no week_number (they belong to current week)
+    let query = supabase.from('guests').select('*')
+    if (weekNum === currentWeek) {
+      query = query.or(`week_number.eq.${weekNum},week_number.is.null`).eq('archived', false)
+    } else {
+      query = query.eq('week_number', weekNum)
+    }
+    const { data } = await query.order('created_at', { ascending: true })
     setWeekGuests(data || [])
   }
 
@@ -227,32 +238,40 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
       {activeWeek && (
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--ink3)', marginBottom: 10 }}>Current Week</div>
-          <Card>
-            <CardBody>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 4 }}>{activeWeek.week_label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
-                    {activeWeek.start_date && activeWeek.end_date ? `${activeWeek.start_date} — ${activeWeek.end_date}` : 'Dates not set'}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 16, textAlign: 'center' }}>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--ocean)' }}>{activeWeek.guest_count || '—'}</div>
-                    <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Guests</div>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--amber)' }}>{activeWeek.toured_count || '—'}</div>
-                    <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Toured</div>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--palm)' }}>{activeWeek.converted_count || '—'}</div>
-                    <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Converted</div>
-                  </div>
-                </div>
+          <div
+            onClick={() => handleSelectWeek(activeWeek)}
+            style={{
+              background: selectedWeek?.week_number === activeWeek.week_number ? 'var(--ocean-light)' : 'white',
+              border: `1px solid ${selectedWeek?.week_number === activeWeek.week_number ? 'var(--ocean2)' : 'var(--border)'}`,
+              borderRadius: 12, padding: '16px 20px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              boxShadow: 'var(--shadow)', transition: 'all .15s',
+            }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 4 }}>{activeWeek.week_label}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
+                {activeWeek.start_date && activeWeek.end_date ? `${activeWeek.start_date} — ${activeWeek.end_date}` : 'Dates not set'}
               </div>
-            </CardBody>
-          </Card>
+            </div>
+            <div style={{ display: 'flex', gap: 24, textAlign: 'center' }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--ocean)' }}>{weekGuests.length || 0}</div>
+                <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Guests</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--amber)' }}>
+                  {weekGuests.filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Toured</div>
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--palm)' }}>
+                  {weekGuests.filter(g => g.status === 'Converted').length}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Converted</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -295,35 +314,48 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
             ))}
           </div>
 
-          {/* Selected week guest list */}
+          {/* Selected week guest list — shows for both current and past weeks */}
           {selectedWeek && weekGuests.length > 0 && (
-            <div>
+            <div style={{ marginTop: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--ink3)', marginBottom: 10 }}>
-                {selectedWeek.week_label} — {weekGuests.length} Guests
+                {selectedWeek.week_label} — {weekGuests.length} Guest{weekGuests.length !== 1 ? 's' : ''}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {weekGuests.map((g, i) => {
                   const ac = AVATAR_COLORS[i % AVATAR_COLORS.length]
                   const sc = STATUS_CFG[g.status] || STATUS_CFG['Arriving Soon']
+                  const scoreColor = g.upgrade_score > 70 ? '#C0504A' : g.upgrade_score > 50 ? '#B8762A' : '#AEAEB2'
                   return (
                     <div key={g.id} style={{
                       background: 'white', borderRadius: 12, border: '1px solid var(--border)',
-                      padding: '13px 15px', display: 'flex', gap: 12, alignItems: 'center',
+                      padding: '13px 15px', display: 'flex', gap: 12, alignItems: 'flex-start',
                     }}>
                       <div style={{
-                        width: 36, height: 36, borderRadius: '50%',
+                        width: 38, height: 38, borderRadius: '50%',
                         background: ac.bg, color: ac.color,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 12, fontWeight: 500, flexShrink: 0,
                       }}>{g.initials}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, fontSize: 13 }}>{g.name}</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--ink3)' }}>{g.membership} · {g.arrival_date} → {g.depart_date}</div>
-                        {g.notes && <div style={{ fontSize: 11, color: 'var(--ink3)', marginTop: 2 }}>{g.notes}</div>}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 500, fontSize: 13.5, marginBottom: 3 }}>{g.name}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 3 }}>
+                          <span>{g.member_type}</span>
+                          <span>·</span>
+                          <span>{g.arrival_date} → {g.depart_date}</span>
+                          <span>·</span>
+                          <span>{g.nights} nights</span>
+                          {g.nationality && <><span>·</span><span>{g.nationality}</span></>}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--ink3)', fontStyle: 'italic', marginBottom: g.notes ? 3 : 0 }}>{g.membership}</div>
+                        {g.email && <div style={{ fontSize: 11, color: 'var(--ocean)' }}>{g.email} {g.whatsapp ? `· ${g.whatsapp}` : ''}</div>}
+                        {g.notes && <div style={{ fontSize: 11.5, color: 'var(--ink2)', marginTop: 4 }}>{g.notes}</div>}
                       </div>
-                      <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color, flexShrink: 0 }}>
-                        {g.status}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                        <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color }}>
+                          {g.status}
+                        </span>
+                        {g.upgrade_score && <div style={{ fontSize: 11, color: scoreColor }}>↑ {g.upgrade_score}%</div>}
+                      </div>
                     </div>
                   )
                 })}
