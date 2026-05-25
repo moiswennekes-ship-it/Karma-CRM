@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Avatar, StatusPill, Btn, AIOutputBox, FieldSelect, ALL_STATUSES } from './UI'
 import { useAI } from '../hooks/useAI'
 
-export function GuestProfile({ guest, onStatusChange, onSaveNotes, onDelete }) {
+export function GuestProfile({ guest, onStatusChange, onSaveNotes, onDelete, onEdit }) {
   const ai = useAI()
   const [notes, setNotes] = useState(guest ? (guest.notes || '') : '')
   const [lastAction, setLastAction] = useState(null)
@@ -104,10 +104,10 @@ export function GuestProfile({ guest, onStatusChange, onSaveNotes, onDelete }) {
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7, marginBottom: 13 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7, marginBottom: 7 }}>
         <Btn variant="green" size="sm" style={{ justifyContent: 'center' }}
           onClick={() => handleGen(() => ai.welcomeWhatsApp(guest), 'whatsapp')}>
-          <i className="ti ti-brand-whatsapp" /> WhatsApp
+          <i className="ti ti-brand-whatsapp" /> Generate
         </Btn>
         <Btn variant="ocean" size="sm" style={{ justifyContent: 'center' }}
           onClick={() => handleGen(() => ai.welcomeEmail(guest), 'email')}>
@@ -118,6 +118,23 @@ export function GuestProfile({ guest, onStatusChange, onSaveNotes, onDelete }) {
           <i className="ti ti-presentation" /> Meet Prep
         </Btn>
       </div>
+
+      {/* WhatsApp send button — shows after message generated */}
+      {ai.output && lastAction === 'whatsapp' && guest.whatsapp && (
+        <a
+          href={`https://wa.me/${guest.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(ai.output)}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            background: '#25D366', color: 'white', borderRadius: 8,
+            padding: '8px 14px', fontSize: 12, fontWeight: 500,
+            textDecoration: 'none', marginBottom: 7, transition: 'all .15s',
+          }}>
+          <i className="ti ti-brand-whatsapp" style={{ fontSize: 15 }} />
+          Send to {guest.name.split(' ')[0]} on WhatsApp →
+        </a>
+      )}
 
       {/* AI output */}
       <AIOutputBox
@@ -154,8 +171,11 @@ export function GuestProfile({ guest, onStatusChange, onSaveNotes, onDelete }) {
             <i className="ti ti-sparkles" /> AI Follow-Up
           </Btn>
         </div>
-        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-          <Btn variant="danger" size="sm" onClick={handleDelete} style={{ width: '100%', justifyContent: 'center' }}>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)', display: 'flex', gap: 7 }}>
+          <Btn variant="ghost" size="sm" onClick={() => onEdit(guest)} style={{ flex: 1, justifyContent: 'center' }}>
+            <i className="ti ti-pencil" /> Edit Guest
+          </Btn>
+          <Btn variant="danger" size="sm" onClick={handleDelete} style={{ flex: 1, justifyContent: 'center' }}>
             <i className="ti ti-trash" /> Delete Guest
           </Btn>
         </div>
