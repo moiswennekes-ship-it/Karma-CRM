@@ -10,6 +10,7 @@ export const STATUS_CFG = {
   'Hot Lead':       { bg: '#FBF0EF', color: '#C0504A' },
   'Proposal Sent':  { bg: '#EAF2ED', color: '#2D5A3D' },
   'Converted':      { bg: '#EAF2ED', color: '#2D5A3D' },
+  'Departed':       { bg: '#F0F0F0', color: '#888888' },
 }
 
 export const AVATAR_COLORS = [
@@ -20,7 +21,7 @@ export const AVATAR_COLORS = [
   { bg: '#F0EDFC', color: '#5A3DB8' },
 ]
 
-export const ALL_STATUSES = Object.keys(STATUS_CFG)
+export const ALL_STATUSES = ['Arriving Soon', 'Contacted', 'Responded', 'Meeting Booked', 'Follow-Up', 'Hot Lead', 'Proposal Sent', 'Converted', 'Departed']
 
 // ── AVATAR ────────────────────────────────────────────────────
 export function Avatar({ initials, colorIndex = 0, size = 40 }) {

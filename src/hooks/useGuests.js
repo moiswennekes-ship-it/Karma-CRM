@@ -7,6 +7,7 @@ import {
   subscribeToGuests,
   logInteraction,
 } from '../lib/supabase'
+import { hasLeft } from '../lib/dates'
 
 export function useGuests() {
   const [guests, setGuests] = useState([])
@@ -18,6 +19,16 @@ export function useGuests() {
     try {
       setLoading(true)
       const data = await getGuests()
+
+      // Auto-update status to 'Departed' for guests whose departure date has passed
+      const toUpdate = data.filter(g =>
+        hasLeft(g.depart_date) && g.status !== 'Departed' && g.status !== 'Converted'
+      )
+      for (const g of toUpdate) {
+        await updateGuest(g.id, { status: 'Departed' })
+        g.status = 'Departed'
+      }
+
       setGuests(data)
     } catch (err) {
       setError(err.message)
