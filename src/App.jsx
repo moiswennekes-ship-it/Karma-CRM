@@ -3,6 +3,7 @@ import { useGuests } from './hooks/useGuests'
 import { DashboardScreen } from './screens/Dashboard'
 import { ObjectionScreen, CalculatorScreen, ComparisonScreen, AIToolsScreen } from './screens/Tools'
 import { AddGuestModal } from './components/AddGuestModal'
+import { EditGuestModal } from './components/EditGuestModal'
 import { GuestCard } from './components/GuestCard'
 import { GuestProfile } from './components/GuestProfile'
 import { Btn, SectionHeader, StatusPill, Avatar } from './components/UI'
@@ -40,7 +41,7 @@ const SCREEN_META = {
 }
 
 // ── ALL MEMBERS SCREEN ────────────────────────────────────────
-function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete }) {
+function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete, onEdit }) {
   const [selectedId, setSelectedId] = useState(null)
   const [filter, setFilter] = useState('all')
 
@@ -77,7 +78,7 @@ function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete }) {
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)' }}>
           Guest Profile
         </div>
-        <GuestProfile guest={selected} onStatusChange={onStatusChange} onSaveNotes={onSaveNotes} onDelete={onDelete} />
+        <GuestProfile guest={selected} onStatusChange={onStatusChange} onSaveNotes={onSaveNotes} onDelete={onDelete} onEdit={onEdit} />
       </div>
     </div>
   )
@@ -204,6 +205,7 @@ export default function App() {
   const [screen, setScreen] = useState('dashboard')
   const [addOpen, setAddOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(21)
+  const [editingGuest, setEditingGuest] = useState(null)
 
   const meta = SCREEN_META[screen] || SCREEN_META.dashboard
 
@@ -305,8 +307,8 @@ export default function App() {
 
         {/* SCREENS */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onNav={setScreen} />}
-          {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} />}
+          {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} onNav={setScreen} />}
+          {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} />}
           {screen === 'arrivals'   && <ArrivalsScreen   guests={guests} onStatusChange={updateStatus} />}
           {screen === 'ai-tools'   && <AIToolsScreen    guests={guests} />}
           {screen === 'objections' && <ObjectionScreen />}
@@ -320,6 +322,14 @@ export default function App() {
 
       {/* ADD GUEST MODAL */}
       <AddGuestModal open={addOpen} onClose={() => setAddOpen(false)} onSave={addGuest} />
+
+      {/* EDIT GUEST MODAL */}
+      <EditGuestModal
+        guest={editingGuest}
+        open={!!editingGuest}
+        onClose={() => setEditingGuest(null)}
+        onSave={async (id, updates) => { await editGuest(id, updates); setEditingGuest(null) }}
+      />
     </div>
   )
 }
