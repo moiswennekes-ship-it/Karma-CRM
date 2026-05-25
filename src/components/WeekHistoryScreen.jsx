@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Btn, SectionHeader, Card, CardHeader, CardBody } from './UI'
+import { Btn, SectionHeader } from './UI'
 
 const STATUS_CFG = {
   'Arriving Soon':  { bg: '#EBF6F8', color: '#1A5F6E' },
@@ -22,131 +22,105 @@ const AVATAR_COLORS = [
 
 export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
   const [weeks, setWeeks] = useState([])
-  const [selectedWeek, setSelectedWeek] = useState(null)
+  const [selectedWeekNum, setSelectedWeekNum] = useState(currentWeek || 21)
   const [weekGuests, setWeekGuests] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showNewWeekModal, setShowNewWeekModal] = useState(false)
+  const [loadingGuests, setLoadingGuests] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [newWeekNum, setNewWeekNum] = useState((currentWeek || 21) + 1)
   const [newWeekStart, setNewWeekStart] = useState('')
   const [newWeekEnd, setNewWeekEnd] = useState('')
   const [starting, setStarting] = useState(false)
 
-  useEffect(() => {
-    loadWeeks()
-  }, [])
+  useEffect(() => { loadWeeks() }, [])
 
+  // Load current week guests on mount
   useEffect(() => {
-    // Auto-load current week guests on mount
-    if (currentWeek) {
-      loadWeekGuests(currentWeek)
-      setSelectedWeek({ week_number: currentWeek, week_label: `Week ${currentWeek}`, status: 'active' })
-    }
+    loadGuests(currentWeek || 21)
   }, [currentWeek])
 
   async function loadWeeks() {
-    setLoading(true)
     const { data } = await supabase
       .from('weeks')
       .select('*')
       .order('week_number', { ascending: false })
     setWeeks(data || [])
-    setLoading(false)
   }
 
-  async function loadWeekGuests(weekNum) {
-    // Load guests for this week, including guests with no week_number (they belong to current week)
-    let query = supabase.from('guests').select('*')
-    if (weekNum === currentWeek) {
-      query = query.or(`week_number.eq.${weekNum},week_number.is.null`).eq('archived', false)
-    } else {
-      query = query.eq('week_number', weekNum)
-    }
-    const { data } = await query.order('created_at', { ascending: true })
+  async function loadGuests(weekNum) {
+    setLoadingGuests(true)
+    const { data } = await supabase
+      .from('guests')
+      .select('*')
+      .or(`week_number.eq.${weekNum},week_number.is.null`)
+      .eq('archived', false)
+      .order('created_at', { ascending: true })
     setWeekGuests(data || [])
+    setLoadingGuests(false)
   }
 
-  async function handleSelectWeek(week) {
-    setSelectedWeek(week)
-    await loadWeekGuests(week.week_number)
+  async function handleSelectWeek(weekNum) {
+    setSelectedWeekNum(weekNum)
+    setLoadingGuests(true)
+    if (weekNum === (currentWeek || 21)) {
+      // Current week — include guests with no week number
+      const { data } = await supabase
+        .from('guests')
+        .select('*')
+        .or(`week_number.eq.${weekNum},week_number.is.null`)
+        .eq('archived', false)
+        .order('created_at', { ascending: true })
+      setWeekGuests(data || [])
+    } else {
+      // Past week — only guests from that week
+      const { data } = await supabase
+        .from('guests')
+        .select('*')
+        .eq('week_number', weekNum)
+        .order('created_at', { ascending: true })
+      setWeekGuests(data || [])
+    }
+    setLoadingGuests(false)
   }
 
   async function handleStartNewWeek() {
     setStarting(true)
     try {
-      // 1. Archive current week
-      await supabase
-        .from('weeks')
-        .update({ status: 'archived' })
-        .eq('week_number', currentWeek)
+      // Archive current week
+      await supabase.from('weeks').update({ status: 'archived' }).eq('week_number', currentWeek)
 
-      // 2. Archive guests who have departed (depart_date doesn't include 'Jun' or future)
-      // We'll archive all guests from the current week
+      // Get all current guests
       const { data: currentGuests } = await supabase
-        .from('guests')
-        .select('*')
-        .eq('week_number', currentWeek)
+        .from('guests').select('*')
+        .or(`week_number.eq.${currentWeek},week_number.is.null`)
         .eq('archived', false)
 
-      // Guests to carry over: those still in-house (not converted/no deal)
-      // Guests to archive: everyone else
       const today = new Date()
       const toArchive = []
-      const toCarryOver = []
+      const toCarry = []
 
       for (const g of (currentGuests || [])) {
-        // Try to parse depart date
-        const departed = isDeparted(g.depart_date, today)
-        if (departed) {
-          toArchive.push(g.id)
-        } else {
-          toCarryOver.push(g.id)
-        }
+        if (isDeparted(g.depart_date, today)) toArchive.push(g.id)
+        else toCarry.push(g.id)
       }
 
-      // Archive departed guests
       if (toArchive.length > 0) {
-        await supabase
-          .from('guests')
-          .update({ archived: true, archive_week: currentWeek })
-          .in('id', toArchive)
+        await supabase.from('guests').update({ archived: true, archive_week: currentWeek }).in('id', toArchive)
+      }
+      if (toCarry.length > 0) {
+        await supabase.from('guests').update({ week_number: newWeekNum, week_label: `Week ${newWeekNum}` }).in('id', toCarry)
       }
 
-      // Carry over in-house guests to new week
-      if (toCarryOver.length > 0) {
-        await supabase
-          .from('guests')
-          .update({ week_number: newWeekNum, week_label: `Week ${newWeekNum}` })
-          .in('id', toCarryOver)
-      }
-
-      // 3. Create new week
-      await supabase
-        .from('weeks')
-        .insert([{
-          week_number: newWeekNum,
-          week_label: `Week ${newWeekNum}`,
-          start_date: newWeekStart,
-          end_date: newWeekEnd,
-          status: 'active',
-        }])
-
-      // 4. Update summary for archived week
-      const toured = (currentGuests || []).filter(g => ['Meeting Booked', 'Contacted', 'Follow-Up', 'Hot Lead', 'Proposal Sent', 'Converted'].includes(g.status)).length
+      // Update week summary
+      const toured = (currentGuests || []).filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length
       const converted = (currentGuests || []).filter(g => g.status === 'Converted').length
-      await supabase
-        .from('weeks')
-        .update({
-          guest_count: (currentGuests || []).length,
-          toured_count: toured,
-          converted_count: converted,
-        })
-        .eq('week_number', currentWeek)
+      await supabase.from('weeks').update({ guest_count: (currentGuests || []).length, toured_count: toured, converted_count: converted }).eq('week_number', currentWeek)
+
+      // Create new week
+      await supabase.from('weeks').insert([{ week_number: newWeekNum, week_label: `Week ${newWeekNum}`, start_date: newWeekStart, end_date: newWeekEnd, status: 'active' }])
 
       await loadWeeks()
-      setShowNewWeekModal(false)
+      setShowModal(false)
       onStartNewWeek(newWeekNum)
-    } catch(e) {
-      console.error(e)
     } finally {
       setStarting(false)
     }
@@ -154,7 +128,6 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
 
   function isDeparted(departDate, today) {
     if (!departDate) return false
-    // Try to parse dates like "31 May 26", "8 Jun 26"
     const months = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11 }
     const parts = departDate.toLowerCase().split(/\s+/)
     if (parts.length >= 3) {
@@ -162,70 +135,76 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
       const mon = months[parts[1]?.substring(0,3)]
       const yr = parseInt('20' + parts[2])
       if (!isNaN(day) && mon !== undefined && !isNaN(yr)) {
-        const d = new Date(yr, mon, day)
-        return d < today
+        return new Date(yr, mon, day) < today
       }
     }
     return false
   }
 
-  const activeWeek = weeks.find(w => w.status === 'active')
+  const activeWeek = weeks.find(w => w.status === 'active') || { week_number: currentWeek, week_label: `Week ${currentWeek}`, status: 'active' }
   const pastWeeks = weeks.filter(w => w.status === 'archived')
+
+  const toured = weekGuests.filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length
+  const converted = weekGuests.filter(g => g.status === 'Converted').length
+
+  const GuestCard = ({ g, i }) => {
+    const ac = AVATAR_COLORS[i % AVATAR_COLORS.length]
+    const sc = STATUS_CFG[g.status] || STATUS_CFG['Arriving Soon']
+    const scoreColor = g.upgrade_score > 70 ? '#C0504A' : g.upgrade_score > 50 ? '#B8762A' : '#AEAEB2'
+    return (
+      <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border)', padding: '13px 15px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <div style={{ width: 38, height: 38, borderRadius: '50%', background: ac.bg, color: ac.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, flexShrink: 0 }}>{g.initials}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 500, fontSize: 13.5, marginBottom: 3 }}>{g.name}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+            <span>{g.member_type}</span>
+            <span>·</span>
+            <span>{g.arrival_date} → {g.depart_date}</span>
+            <span>·</span>
+            <span>{g.nights} nights</span>
+            {g.nationality && <><span>·</span><span>{g.nationality}</span></>}
+          </div>
+          {g.membership && <div style={{ fontSize: 11, color: 'var(--ink3)', fontStyle: 'italic', marginBottom: 2 }}>{g.membership}</div>}
+          {g.email && <div style={{ fontSize: 11, color: 'var(--ocean)' }}>{g.email}{g.whatsapp ? ` · ${g.whatsapp}` : ''}</div>}
+          {g.notes && <div style={{ fontSize: 11.5, color: 'var(--ink2)', marginTop: 4 }}>{g.notes}</div>}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+          <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color }}>{g.status}</span>
+          {g.upgrade_score > 0 && <div style={{ fontSize: 11, color: scoreColor }}>↑ {g.upgrade_score}%</div>}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ overflowY: 'auto', padding: 22, flex: 1 }}>
-      <SectionHeader
-        title="Week History"
-        right={
-          <Btn variant="ocean" size="sm" onClick={() => setShowNewWeekModal(true)}>
-            <i className="ti ti-calendar-plus" /> Start New Week
-          </Btn>
-        }
-      />
+      <SectionHeader title="Week History" right={
+        <Btn variant="ocean" size="sm" onClick={() => setShowModal(true)}>
+          <i className="ti ti-calendar-plus" /> Start New Week
+        </Btn>
+      } />
 
-      {/* New Week Modal */}
-      {showNewWeekModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(24,24,26,.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
-        }} onClick={() => setShowNewWeekModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: 'white', borderRadius: 16, padding: 24, width: 420,
-            boxShadow: '0 8px 32px rgba(24,24,26,.12)',
-          }}>
+      {/* START NEW WEEK MODAL */}
+      {showModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(24,24,26,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 16, padding: 24, width: 420, boxShadow: '0 8px 32px rgba(24,24,26,.12)' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, marginBottom: 6 }}>Start Week {newWeekNum}</div>
             <p style={{ fontSize: 12, color: 'var(--ink3)', marginBottom: 20, lineHeight: 1.6 }}>
-              This will archive Week {currentWeek}. Guests who have already departed will be archived. Guests still in-house will carry over to Week {newWeekNum}.
+              This will archive Week {currentWeek}. Departed guests will be archived. In-house guests carry over to Week {newWeekNum}.
             </p>
-
-            <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', display: 'block', marginBottom: 5 }}>Week Number</label>
-            <input
-              type="number"
-              value={newWeekNum}
-              onChange={e => setNewWeekNum(Number(e.target.value))}
-              style={{ width: '100%', border: '1px solid var(--border2)', borderRadius: 8, padding: '9px 12px', fontFamily: 'var(--font-body)', fontSize: 13, background: 'var(--sand)', marginBottom: 12, outline: 'none' }}
-            />
-
-            <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', display: 'block', marginBottom: 5 }}>Week Start Date</label>
-            <input
-              type="text"
-              value={newWeekStart}
-              onChange={e => setNewWeekStart(e.target.value)}
-              placeholder="e.g. 30 May 2026"
-              style={{ width: '100%', border: '1px solid var(--border2)', borderRadius: 8, padding: '9px 12px', fontFamily: 'var(--font-body)', fontSize: 13, background: 'var(--sand)', marginBottom: 12, outline: 'none' }}
-            />
-
-            <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', display: 'block', marginBottom: 5 }}>Week End Date</label>
-            <input
-              type="text"
-              value={newWeekEnd}
-              onChange={e => setNewWeekEnd(e.target.value)}
-              placeholder="e.g. 5 Jun 2026"
-              style={{ width: '100%', border: '1px solid var(--border2)', borderRadius: 8, padding: '9px 12px', fontFamily: 'var(--font-body)', fontSize: 13, background: 'var(--sand)', marginBottom: 20, outline: 'none' }}
-            />
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <Btn variant="ghost" onClick={() => setShowNewWeekModal(false)}>Cancel</Btn>
+            {[
+              ['Week Number', 'number', newWeekNum, setNewWeekNum, ''],
+              ['Start Date', 'text', newWeekStart, setNewWeekStart, 'e.g. 30 May 2026'],
+              ['End Date', 'text', newWeekEnd, setNewWeekEnd, 'e.g. 5 Jun 2026'],
+            ].map(([label, type, val, setter, ph]) => (
+              <div key={label}>
+                <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', display: 'block', marginBottom: 5 }}>{label}</label>
+                <input type={type} value={val} onChange={e => setter(type === 'number' ? Number(e.target.value) : e.target.value)} placeholder={ph}
+                  style={{ width: '100%', border: '1px solid var(--border2)', borderRadius: 8, padding: '9px 12px', fontFamily: 'var(--font-body)', fontSize: 13, background: 'var(--sand)', marginBottom: 12, outline: 'none' }} />
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+              <Btn variant="ghost" onClick={() => setShowModal(false)}>Cancel</Btn>
               <Btn variant="ocean" onClick={handleStartNewWeek} disabled={starting}>
                 <i className="ti ti-calendar-plus" /> {starting ? 'Starting...' : `Start Week ${newWeekNum}`}
               </Btn>
@@ -234,141 +213,103 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
         </div>
       )}
 
-      {/* Current Week */}
-      {activeWeek && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--ink3)', marginBottom: 10 }}>Current Week</div>
-          <div
-            onClick={() => handleSelectWeek(activeWeek)}
-            style={{
-              background: selectedWeek?.week_number === activeWeek.week_number ? 'var(--ocean-light)' : 'white',
-              border: `1px solid ${selectedWeek?.week_number === activeWeek.week_number ? 'var(--ocean2)' : 'var(--border)'}`,
-              borderRadius: 12, padding: '16px 20px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              boxShadow: 'var(--shadow)', transition: 'all .15s',
-            }}>
-            <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 4 }}>{activeWeek.week_label}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
-                {activeWeek.start_date && activeWeek.end_date ? `${activeWeek.start_date} — ${activeWeek.end_date}` : 'Dates not set'}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 24, textAlign: 'center' }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--ocean)' }}>{weekGuests.length || 0}</div>
-                <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Guests</div>
-              </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--amber)' }}>
-                  {weekGuests.filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Toured</div>
-              </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--palm)' }}>
-                  {weekGuests.filter(g => g.status === 'Converted').length}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Converted</div>
-              </div>
+      {/* CURRENT WEEK */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--ink3)', marginBottom: 10 }}>Current Week</div>
+        <div
+          onClick={() => handleSelectWeek(activeWeek.week_number)}
+          style={{
+            background: selectedWeekNum === activeWeek.week_number ? 'var(--ocean-light)' : 'white',
+            border: `1px solid ${selectedWeekNum === activeWeek.week_number ? 'var(--ocean2)' : 'var(--border)'}`,
+            borderRadius: 12, padding: '16px 20px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            boxShadow: 'var(--shadow)', transition: 'all .15s', marginBottom: 12,
+          }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, marginBottom: 4 }}>{activeWeek.week_label}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
+              {activeWeek.start_date && activeWeek.end_date ? `${activeWeek.start_date} — ${activeWeek.end_date}` : 'Click to view all guests'}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Past Weeks */}
-      {pastWeeks.length > 0 && (
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--ink3)', marginBottom: 10 }}>Past Weeks</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-            {pastWeeks.map(w => (
-              <div key={w.id}
-                onClick={() => handleSelectWeek(w)}
-                style={{
-                  background: selectedWeek?.id === w.id ? 'var(--ocean-light)' : 'white',
-                  border: `1px solid ${selectedWeek?.id === w.id ? 'var(--ocean2)' : 'var(--border)'}`,
-                  borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  transition: 'all .15s',
-                }}>
-                <div>
-                  <div style={{ fontWeight: 500, fontSize: 14 }}>{w.week_label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 2 }}>
-                    {w.start_date && w.end_date ? `${w.start_date} — ${w.end_date}` : 'Dates not recorded'}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 16, textAlign: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: 16 }}>{w.guest_count || 0}</div>
-                    <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Guests</div>
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: 16, color: 'var(--amber)' }}>{w.toured_count || 0}</div>
-                    <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Toured</div>
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: 16, color: 'var(--palm)' }}>{w.converted_count || 0}</div>
-                    <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>Converted</div>
-                  </div>
-                </div>
+          <div style={{ display: 'flex', gap: 24, textAlign: 'center' }}>
+            {[
+              [selectedWeekNum === activeWeek.week_number ? weekGuests.length : '—', 'Guests', 'var(--ocean)'],
+              [selectedWeekNum === activeWeek.week_number ? toured : '—', 'Toured', 'var(--amber)'],
+              [selectedWeekNum === activeWeek.week_number ? converted : '—', 'Converted', 'var(--palm)'],
+            ].map(([val, label, color]) => (
+              <div key={label}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color }}>{val}</div>
+                <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Selected week guest list — shows for both current and past weeks */}
-          {selectedWeek && weekGuests.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--ink3)', marginBottom: 10 }}>
-                {selectedWeek.week_label} — {weekGuests.length} Guest{weekGuests.length !== 1 ? 's' : ''}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {weekGuests.map((g, i) => {
-                  const ac = AVATAR_COLORS[i % AVATAR_COLORS.length]
-                  const sc = STATUS_CFG[g.status] || STATUS_CFG['Arriving Soon']
-                  const scoreColor = g.upgrade_score > 70 ? '#C0504A' : g.upgrade_score > 50 ? '#B8762A' : '#AEAEB2'
-                  return (
-                    <div key={g.id} style={{
-                      background: 'white', borderRadius: 12, border: '1px solid var(--border)',
-                      padding: '13px 15px', display: 'flex', gap: 12, alignItems: 'flex-start',
-                    }}>
-                      <div style={{
-                        width: 38, height: 38, borderRadius: '50%',
-                        background: ac.bg, color: ac.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 12, fontWeight: 500, flexShrink: 0,
-                      }}>{g.initials}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 500, fontSize: 13.5, marginBottom: 3 }}>{g.name}</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 3 }}>
-                          <span>{g.member_type}</span>
-                          <span>·</span>
-                          <span>{g.arrival_date} → {g.depart_date}</span>
-                          <span>·</span>
-                          <span>{g.nights} nights</span>
-                          {g.nationality && <><span>·</span><span>{g.nationality}</span></>}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--ink3)', fontStyle: 'italic', marginBottom: g.notes ? 3 : 0 }}>{g.membership}</div>
-                        {g.email && <div style={{ fontSize: 11, color: 'var(--ocean)' }}>{g.email} {g.whatsapp ? `· ${g.whatsapp}` : ''}</div>}
-                        {g.notes && <div style={{ fontSize: 11.5, color: 'var(--ink2)', marginTop: 4 }}>{g.notes}</div>}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
-                        <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color }}>
-                          {g.status}
-                        </span>
-                        {g.upgrade_score && <div style={{ fontSize: 11, color: scoreColor }}>↑ {g.upgrade_score}%</div>}
-                      </div>
+        {/* Current week guest list */}
+        {selectedWeekNum === activeWeek.week_number && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {loadingGuests && <div style={{ textAlign: 'center', padding: 20, color: 'var(--ink4)', fontSize: 13 }}>Loading guests...</div>}
+            {!loadingGuests && weekGuests.length === 0 && (
+              <div style={{ textAlign: 'center', padding: 20, color: 'var(--ink4)', fontSize: 13 }}>No guests this week yet. Import your leadsheet to add them.</div>
+            )}
+            {!loadingGuests && weekGuests.map((g, i) => <GuestCard key={g.id} g={g} i={i} />)}
+          </div>
+        )}
+      </div>
+
+      {/* PAST WEEKS */}
+      {pastWeeks.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--ink3)', marginBottom: 10 }}>Past Weeks</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {pastWeeks.map(w => (
+              <div key={w.id}>
+                <div
+                  onClick={() => handleSelectWeek(w.week_number)}
+                  style={{
+                    background: selectedWeekNum === w.week_number ? 'var(--ocean-light)' : 'white',
+                    border: `1px solid ${selectedWeekNum === w.week_number ? 'var(--ocean2)' : 'var(--border)'}`,
+                    borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    transition: 'all .15s', marginBottom: selectedWeekNum === w.week_number ? 8 : 0,
+                  }}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: 14 }}>{w.week_label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 2 }}>
+                      {w.start_date && w.end_date ? `${w.start_date} — ${w.end_date}` : 'Click to view guests'}
                     </div>
-                  )
-                })}
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, textAlign: 'center' }}>
+                    {[
+                      [w.guest_count || 0, 'Guests', 'var(--ink)'],
+                      [w.toured_count || 0, 'Toured', 'var(--amber)'],
+                      [w.converted_count || 0, 'Converted', 'var(--palm)'],
+                    ].map(([val, label, color]) => (
+                      <div key={label}>
+                        <div style={{ fontWeight: 500, fontSize: 16, color }}>{val}</div>
+                        <div style={{ fontSize: 10, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Past week guest list */}
+                {selectedWeekNum === w.week_number && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                    {loadingGuests && <div style={{ textAlign: 'center', padding: 20, color: 'var(--ink4)', fontSize: 13 }}>Loading guests...</div>}
+                    {!loadingGuests && weekGuests.map((g, i) => <GuestCard key={g.id} g={g} i={i} />)}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
-      {!loading && pastWeeks.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--ink4)' }}>
-          <i className="ti ti-history" style={{ fontSize: 40, display: 'block', marginBottom: 12, opacity: .3 }} />
-          <p style={{ fontSize: 13 }}>No past weeks yet. When you start a new week, the current week will be archived here.</p>
+      {pastWeeks.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--ink4)' }}>
+          <i className="ti ti-history" style={{ fontSize: 36, display: 'block', marginBottom: 10, opacity: .3 }} />
+          <p style={{ fontSize: 13 }}>No past weeks yet. When you start a new week, this week gets archived here.</p>
         </div>
       )}
     </div>
