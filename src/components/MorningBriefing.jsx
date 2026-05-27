@@ -29,7 +29,7 @@ export function MorningBriefing({ guests }) {
     setLoading(true)
     setBriefing('')
     
-    const prompt = `You are a luxury resort member relations assistant. Generate a concise morning briefing for James Reid at Karma Kandara, Bali.
+    const prompt = `You are a luxury resort member relations assistant. Generate a concise morning briefing for Mois Wennekes at Karma Kandara, Bali.
 
 Today is ${dayName}, ${dateName}.
 

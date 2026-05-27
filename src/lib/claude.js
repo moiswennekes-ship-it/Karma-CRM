@@ -43,7 +43,7 @@ Guidelines:
 - Reference their specific membership or history naturally
 - End with a soft, low-pressure invitation to connect for coffee
 - Use 1–2 relevant emojis (🌴 🌊 😊) — not excessive
-- Sign off as James, Member Relations, Karma Collection
+- Sign off as Mois, Member Relations, Karma Collection
 
 Do not mention upgrades or sales directly.`
   return callClaude(prompt)
@@ -66,7 +66,7 @@ Subject: [write a warm, personalized subject line]
 [email body — 3–4 paragraphs, warm hospitality tone, end with invitation for complimentary welcome coffee]
 
 Warm regards,
-James Reid
+Mois Wennekes
 Member Relations | Karma Kandara, Bali`
   return callClaude(prompt)
 }
@@ -117,7 +117,7 @@ Guidelines:
 - Keep it warm and personal, not formulaic
 - Include a clear next step or call to action
 - ${format === 'email' ? 'Include a subject line. 3–4 paragraphs.' : '2–3 short paragraphs. Conversational tone.'}
-- Sign from James, Member Relations`
+- Sign from Mois, Member Relations`
   return callClaude(prompt)
 }
 

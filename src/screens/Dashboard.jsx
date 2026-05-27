@@ -3,6 +3,7 @@ import { GuestCard } from '../components/GuestCard'
 import { GuestProfile } from '../components/GuestProfile'
 import { StatCard, SectionHeader, Btn } from '../components/UI'
 import { MorningBriefing } from '../components/MorningBriefing'
+import { ClosingWindowAlerts } from '../components/ClosingWindowAlerts'
 import { hasLeft, isLeavingSoon, isToday } from '../lib/dates'
 
 const PIPELINE_STAGES = [
@@ -40,6 +41,11 @@ export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSave
       {/* Morning Briefing */}
       <div style={{ padding: '14px 20px 0', flexShrink: 0 }}>
         <MorningBriefing guests={guests} />
+      </div>
+
+      {/* Closing Window Alerts */}
+      <div style={{ flexShrink: 0 }}>
+        <ClosingWindowAlerts guests={guests} onSelectGuest={setSelectedId} />
       </div>
 
       {/* Stats bar */}
