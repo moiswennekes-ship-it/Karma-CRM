@@ -201,7 +201,7 @@ function PipelineScreen({ guests, onNav }) {
 
 // ── APP ROOT ──────────────────────────────────────────────────
 export default function App() {
-  const { guests, loading, error, addGuest, updateStatus, saveNotes, removeGuest, pipelineCounts, todayArrivals } = useGuests()
+  const { guests, loading, error, addGuest, editGuest, updateStatus, saveNotes, removeGuest, pipelineCounts, todayArrivals } = useGuests()
   const [screen, setScreen] = useState('dashboard')
   const [addOpen, setAddOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(21)
