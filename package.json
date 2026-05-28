@@ -2,6 +2,7 @@
   "name": "karma-crm",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "react": "^18.2.0",
@@ -9,11 +10,10 @@
     "react-router-dom": "^6.21.0",
     "react-scripts": "5.0.1"
   },
- "scripts": {
+  "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "vercel-build": "react-scripts build"
+    "test": "react-scripts test"
   },
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
