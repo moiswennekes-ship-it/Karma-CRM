@@ -2,12 +2,12 @@
 // All AI calls go through this file. In production, route these
 // through a Supabase Edge Function to keep your API key private.
 
-const API_KEY = process.env.REACT_APP_ANTHROPIC_API_KEY
+
 const CLAUDE_API_URL = '/api/claude';
 const MODEL = 'claude-sonnet-4-20250514'
 
 async function callClaude(prompt, maxTokens = 900) {
-  const res = await fetch(API_URL, {
+  const res = await fetch(CLAUDE_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
