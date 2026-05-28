@@ -3,7 +3,7 @@
 // through a Supabase Edge Function to keep your API key private.
 
 const API_KEY = process.env.REACT_APP_ANTHROPIC_API_KEY
-const API_URL = 'https://api.anthropic.com/v1/messages'
+const CLAUDE_API_URL = '/api/claude';
 const MODEL = 'claude-sonnet-4-20250514'
 
 async function callClaude(prompt, maxTokens = 900) {
