@@ -4,7 +4,7 @@
 
 
 const CLAUDE_API_URL = '/api/claude';
-const MODEL = 'claude-sonnet-4-20250514'
+const MODEL = 'claude-sonnet-4-5'
 
 async function callClaude(prompt, maxTokens = 900) {
   const res = await fetch(CLAUDE_API_URL, {
