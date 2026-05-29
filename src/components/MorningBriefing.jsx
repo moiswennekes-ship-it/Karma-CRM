@@ -52,9 +52,9 @@ Write a warm, direct morning briefing (3-4 short paragraphs, not bullet points).
 Keep it under 200 words. Sound like a knowledgeable colleague, not a robot.`
 
     try {
-     const res = await fetch('https://api.anthropic.com/v1/messages', {
+     const res = await fetch('/api/claude', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.REACT_APP_ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
           max_tokens: 400,
