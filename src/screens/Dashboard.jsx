@@ -27,7 +27,7 @@ export function DashboardScreen({ guests, pipelineCounts, todayArrivals, onStatu
   const [selectedId, setSelectedId] = useState(null)
 
   const filtered = guests.filter(g => {
-    if (filter === 'hot') return g.upgrade_score >= 65 && !hasLeft(g.depart_date)
+    if (filter === 'hot') return ['Hot Lead', 'Proposal Sent'].includes(g.status) && !hasLeft(g.depart_date)
     if (filter === 'followup') return ['Follow-Up', 'Meeting Booked', 'Contacted'].includes(g.status) && !hasLeft(g.depart_date)
     if (filter === 'arriving') return isToday(g.arrival_date)
     if (filter === 'leaving') return isLeavingSoon(g.depart_date, 2) && !hasLeft(g.depart_date)

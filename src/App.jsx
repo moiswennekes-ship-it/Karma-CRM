@@ -48,7 +48,7 @@ function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete, onEdit })
 
   const filtered = guests.filter(g => {
     if (filter === 'Arriving Soon') return g.status === 'Arriving Soon'
-    if (filter === 'Hot Lead') return g.upgrade_score >= 65
+    if (filter === 'Hot Lead') return ['Hot Lead', 'Proposal Sent'].includes(g.status)
     if (filter === 'Converted') return g.status === 'Converted'
     return true
   })
@@ -97,7 +97,7 @@ function ArrivalsScreen({ guests, onStatusChange }) {
         <SectionHeader title={`Today's Arrivals (${today.length})`} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {today.map(g => {
-            const scoreColor = g.upgrade_score > 70 ? '#C0504A' : g.upgrade_score > 50 ? '#B8762A' : '#AEAEB2'
+
             return (
               <div key={g.id} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -121,7 +121,7 @@ function ArrivalsScreen({ guests, onStatusChange }) {
                     <div style={{ flex: 1, height: 3, background: 'var(--sand3)', borderRadius: 2 }}>
                       <div style={{ width: `${g.upgrade_score}%`, height: '100%', background: scoreColor, borderRadius: 2 }} />
                     </div>
-                    <div style={{ fontSize: 11, color: scoreColor }}>↑ {g.upgrade_score}% upgrade potential</div>
+
                   </div>
                 </div>
               </div>
@@ -188,7 +188,7 @@ function PipelineScreen({ guests, onNav }) {
                       <div style={{ fontWeight: 500, fontSize: 13 }}>{g.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--ink3)' }}>{g.membership} · {g.arrival_date}</div>
                     </div>
-                    <div style={{ fontSize: 11.5, color: g.upgrade_score > 70 ? 'var(--rose)' : 'var(--ink3)' }}>↑ {g.upgrade_score}%</div>
+
                   </div>
                 ))}
               </div>

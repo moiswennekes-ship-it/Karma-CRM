@@ -67,7 +67,7 @@ export function useGuests() {
       ...guestData,
       initials,
       status: guestData.status || 'Arriving Soon',
-      upgrade_score: guestData.upgrade_score || 50,
+      upgrade_score: 0,
       color_index: guests.length % 5,
     }
     const created = await createGuest(newGuest)
@@ -124,7 +124,7 @@ export function useGuests() {
   )
 
   // Computed: hot leads (score >= 65)
-  const hotLeads = guests.filter(g => g.upgrade_score >= 65)
+  const hotLeads = guests.filter(g => ['Hot Lead', 'Proposal Sent'].includes(g.status))
 
   return {
     guests,

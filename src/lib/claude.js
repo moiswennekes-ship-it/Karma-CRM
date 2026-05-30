@@ -79,7 +79,6 @@ export async function generateMeetingPrep(guest, extraContext = '') {
 Guest: ${guest.name}
 Membership: ${guest.membership} (${guest.member_type})
 Party: ${guest.party} | Last stay: ${guest.last_stay}
-Upgrade score: ${guest.upgrade_score}/100
 Notes: ${guest.notes}
 ${extraContext ? `Additional context: ${extraContext}` : ''}
 
@@ -169,7 +168,6 @@ export async function generateOpportunityInsight(guest) {
   const prompt = `In 2–3 sentences, explain the key membership opportunity or relationship strategy for this resort guest. Be specific and actionable. No fluff.
 
 ${guest.name} | ${guest.membership} (${guest.member_type})
-Last stay: ${guest.last_stay} | Upgrade score: ${guest.upgrade_score}/100
-Notes: ${guest.notes}`
+Last stay: ${guest.last_stay} | Notes: ${guest.notes}`
   return callClaude(prompt, 300)
 }

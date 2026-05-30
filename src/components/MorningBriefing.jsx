@@ -17,9 +17,9 @@ export function MorningBriefing({ guests }) {
   const notContacted = activeGuests.filter(g => g.status === 'Arriving Soon')
   const followUps = activeGuests.filter(g => g.status === 'Follow-Up')
   const meetingsToday = activeGuests.filter(g => g.status === 'Meeting Booked')
-  const hotLeads = activeGuests.filter(g => g.upgrade_score >= 75 && g.status !== 'Converted')
+  const hotLeads = activeGuests.filter(g => ['Hot Lead', 'Proposal Sent'].includes(g.status))
   const leavingSoon = inHouse.filter(g =>
-    isLeavingSoon(g.depart_date, 2) && g.status !== 'Converted' && g.upgrade_score >= 50
+    isLeavingSoon(g.depart_date, 2) && g.status !== 'Converted'
   )
   const departed = guests.filter(g => hasLeft(g.depart_date))
 

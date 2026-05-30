@@ -102,9 +102,7 @@ export function EditGuestModal({ guest, open, onClose, onSave }) {
           <FieldInput value={form.room} onChange={set('room')} placeholder="e.g. 58" />
         </div>
         <div>
-          <FieldLabel>Upgrade Score (%)</FieldLabel>
-          <FieldInput value={form.upgrade_score} onChange={v => set('upgrade_score')(Number(v))} placeholder="0-100" type="number" />
-        </div>
+          </div>
         <div style={{ gridColumn: '1/-1' }}>
           <FieldLabel>Notes</FieldLabel>
           <FieldTextarea value={form.notes} onChange={set('notes')} placeholder="Key observations, interests, potential opportunities..." rows={4} />

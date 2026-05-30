@@ -23,7 +23,6 @@ const AVATAR_COLORS = [
 function GuestCard({ g, i }) {
   const ac = AVATAR_COLORS[i % AVATAR_COLORS.length]
   const sc = STATUS_CFG[g.status] || STATUS_CFG['Arriving Soon']
-  const scoreColor = g.upgrade_score > 70 ? '#C0504A' : g.upgrade_score > 50 ? '#B8762A' : '#AEAEB2'
   return (
     <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border)', padding: '13px 15px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
       <div style={{ width: 38, height: 38, borderRadius: '50%', background: ac.bg, color: ac.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, flexShrink: 0 }}>{g.initials}</div>
