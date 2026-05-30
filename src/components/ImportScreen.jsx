@@ -48,16 +48,47 @@ function detectStatus(notes, apptDate, tourCol) {
   return 'Arriving Soon'
 }
 
+function parseTSVWithQuotes(text) {
+  // Properly handle quoted multi-line cells from Google Sheets
+  const rows = []
+  let row = []
+  let cell = ''
+  let inQuotes = false
+  let i = 0
+
+  while (i < text.length) {
+    const ch = text[i]
+    if (ch === '"' && !inQuotes) {
+      inQuotes = true
+      i++
+    } else if (ch === '"' && inQuotes) {
+      if (text[i+1] === '"') { cell += '"'; i += 2 }
+      else { inQuotes = false; i++ }
+    } else if (ch === '\t' && !inQuotes) {
+      row.push(cell); cell = ''; i++
+    } else if (ch === '\n' && !inQuotes) {
+      row.push(cell); cell = ''
+      if (row.some(c => c.trim())) rows.push(row)
+      row = []; i++
+    } else if (ch === '\r' && !inQuotes) {
+      i++
+    } else {
+      cell += ch; i++
+    }
+  }
+  if (cell || row.length) { row.push(cell); if (row.some(c => c.trim())) rows.push(row) }
+  return rows
+}
+
 function parseLeadsheet(text) {
-  const lines = text.split('\n')
+  const rows = parseTSVWithQuotes(text)
   const guestMap = {}
   const guestOrder = []
 
-  for (const line of lines) {
-    const cols = line.split('\t')
+  for (const cols of rows) {
     if (cols.length < 5) continue
 
-    const name = col(cols, 0)
+    const name = col(cols, 0).replace(/\n.*/s, '').trim()
     if (!name) continue
 
     // Skip headers and section labels
@@ -75,7 +106,7 @@ function parseLeadsheet(text) {
     const depart      = col(cols, 4)
     const nights      = parseInt(col(cols, 5)) || 0
     const bookingNum  = col(cols, 6)
-    const membership  = col(cols, 11)
+    const membership  = col(cols, 11).replace(/\n/g, ' + ')
     const nationality = col(cols, 12)
     const linkedStay  = col(cols, 13)  // YES / NO
     const linkedDetail = col(cols, 14) // FROM KM, TO KJ, 2nd weeks etc
