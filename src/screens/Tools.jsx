@@ -88,7 +88,7 @@ export function CalculatorScreen() {
   const [biOdd, setBiOdd] = useState(true)
 
   const fee = Math.round(points * 6.02 + 382)
-  const currentYear = new Date().getFullYear()
+  const currentYear = new Date().getFullYear() - 1
   const totalYears = Math.max(1, endYear - currentYear)
 
   let totalFull = 0, totalBi = 0
@@ -109,7 +109,7 @@ export function CalculatorScreen() {
     <div style={{ overflowY: 'auto', padding: 22, flex: 1 }}>
       <SectionHeader title="Maintenance Fee Calculator" />
       <p style={{ fontSize: 12, color: 'var(--ink3)', marginBottom: 20 }}>
-        Project the true long-term cost to help guests understand their investment.
+        Project fees from this year to membership end date, with full and bi-annual payment options.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 16 }}>
