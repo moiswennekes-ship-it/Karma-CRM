@@ -34,7 +34,7 @@ const SCREEN_META = {
   arrivals:    { title: "Today's Arrivals",     sub: 'Guests checking in today — contact status and welcome messages' },
   'ai-tools':  { title: 'AI Communication Tools', sub: 'Generate personalized messages, proposals and meeting prep' },
   objections:  { title: 'Objection Handler',    sub: 'AI-crafted responses to any membership objection' },
-  calculator:  { title: 'Fee Calculator',       sub: 'Project long-term costs — 5, 10, and 25-year views' },
+  calculator:  { title: 'Fee Calculator',       sub: 'Project fees from membership start to end date' },
   comparison:  { title: 'Fractional Comparison', sub: 'Side-by-side 10-year comparison of membership vs fractional' },
   import:     { title: 'Import Leadsheet',   sub: 'Paste your weekly leadsheet and import all guests automatically' },
   weeks:      { title: 'Week History',        sub: 'View past weeks, start a new week, and track your conversion history' },
