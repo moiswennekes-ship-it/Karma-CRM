@@ -7,7 +7,7 @@ import {
   subscribeToGuests,
   logInteraction,
 } from '../lib/supabase'
-import { hasLeft } from '../lib/dates'
+import { hasLeft, isToday } from '../lib/dates'
 
 export function useGuests() {
   const [guests, setGuests] = useState([])
@@ -120,7 +120,7 @@ export function useGuests() {
 
   // Computed: today's arrivals
   const todayArrivals = guests.filter(g =>
-    g.arrival_date && g.arrival_date.toLowerCase().includes('today')
+    g.arrival_date g.arrival_date && g.arrival_date.toLowerCase().includes('today')g.arrival_date && g.arrival_date.toLowerCase().includes('today') isToday(g.arrival_date)
   )
 
   // Computed: hot leads (score >= 65)
