@@ -94,7 +94,7 @@ export function CalculatorScreen() {
     if (y <= 5) total5 += yFee
     if (y <= 10) { total10 += yFee; hotelTotal10 += hVal }
     total25 += yFee
-    if (y <= 10) rows.push({ year: y, fee: yFee, hotel: hVal })
+    rows.push({ year: y, fee: yFee, hotel: hVal })
   }
 
   const fmt = (n) => '$' + Math.round(n).toLocaleString()
@@ -135,7 +135,7 @@ export function CalculatorScreen() {
           </div>
 
           <Card>
-            <CardHeader title="Year-by-Year (10 years)" />
+            <CardHeader title="Year-by-Year (25 years)" />
             <CardBody style={{ padding: 0 }}>
               {rows.map(r => (
                 <div key={r.year} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 12.5 }}>
