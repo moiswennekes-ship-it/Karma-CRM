@@ -29,7 +29,7 @@ const NAV = [
 ]
 
 const SCREEN_META = {
-  dashboard:   { title: 'Good morning, Mois', sub: 'Sunday 25 May · Bali · Check your arrivals and pipeline' },
+  dashboard:   { title: 'Good morning, Mois', sub: new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · Bali · Check your arrivals and pipeline' },
   guests:      { title: 'All Members',          sub: 'View, filter and manage all member records' },
   arrivals:    { title: "Today's Arrivals",     sub: 'Guests checking in today — contact status and welcome messages' },
   'ai-tools':  { title: 'AI Communication Tools', sub: 'Generate personalized messages, proposals and meeting prep' },
