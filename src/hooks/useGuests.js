@@ -120,7 +120,7 @@ export function useGuests() {
 
   // Computed: today's arrivals
   const todayArrivals = guests.filter(g =>
-    g.arrival_date && isToday(g.arrival_date)
+    g.arrival_date && isToday(g.arrival_date) && !(g.linked_stay || '').toLowerCase().includes('2nd')
   )
 
   // Computed: hot leads (score >= 65)

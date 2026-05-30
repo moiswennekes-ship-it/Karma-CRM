@@ -87,7 +87,7 @@ function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete, onEdit })
 
 // ── ARRIVALS SCREEN ───────────────────────────────────────────
 function ArrivalsScreen({ guests, onStatusChange }) {
-  const today = guests.filter(g => isToday(g.arrival_date))
+  const today = guests.filter(g => isToday(g.arrival_date) && !(g.linked_stay || '').toLowerCase().includes('2nd'))
   const [selectedId, setSelectedId] = useState(null)
   const selected = guests.find(g => g.id === selectedId)
 
