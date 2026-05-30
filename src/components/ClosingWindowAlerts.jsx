@@ -12,10 +12,15 @@ export function ClosingWindowAlerts({ guests, onSelectGuest }) {
       let reason = ''
       let action = ''
 
-      if ((g.status === 'Hot Lead' || g.upgrade_score >= 70) && daysLeft <= 3) {
+      if (g.status === 'Hot Lead' && daysLeft <= 3) {
         urgency = 'critical'
         reason = `Hot lead, only ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`
         action = 'Book a meeting today'
+      }
+      else if (g.status === 'Proposal Sent' && daysLeft <= 3) {
+        urgency = 'critical'
+        reason = `Proposal sent, leaving in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+        action = 'Follow up on proposal now'
       }
       else if (g.status === 'Meeting Booked' && daysLeft <= 2) {
         urgency = 'high'
@@ -27,15 +32,20 @@ export function ClosingWindowAlerts({ guests, onSelectGuest }) {
         reason = `Follow-up needed, leaving in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
         action = 'Send personalized message today'
       }
+      else if (g.status === 'Contacted' && daysLeft <= 2) {
+        urgency = 'high'
+        reason = `Contacted but no meeting, leaving in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+        action = 'Push for a meeting today'
+      }
       else if (g.status === 'Arriving Soon' && daysLeft <= 2 && daysLeft >= 0) {
         urgency = 'high'
         reason = `Not yet contacted, leaving in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
         action = 'Reach out immediately'
       }
-      else if (g.upgrade_score >= 60 && daysLeft >= 3 && daysLeft <= 5) {
+      else if (['Contacted', 'Follow-Up', 'Meeting Booked'].includes(g.status) && daysLeft >= 3 && daysLeft <= 5) {
         urgency = 'medium'
         reason = `Optimal window (${daysLeft} days left)`
-        action = 'Schedule tour this week'
+        action = 'Schedule or follow up this week'
       }
 
       return urgency !== 'low' ? { guest: g, urgency, reason, action, daysLeft } : null
