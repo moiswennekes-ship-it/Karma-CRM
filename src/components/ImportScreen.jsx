@@ -107,6 +107,7 @@ function parseLeadsheet(text) {
     const nights      = parseInt(col(cols, 5)) || 0
     const bookingNum  = col(cols, 6)
     const membership  = col(cols, 11).replace(/\n/g, ' + ')
+    const rawMemberType = col(cols, 7)
     const nationality = col(cols, 12)
     const linkedStay  = col(cols, 13)  // YES / NO
     const linkedDetail = col(cols, 14) // FROM KM, TO KJ, 2nd weeks etc
@@ -126,7 +127,7 @@ function parseLeadsheet(text) {
       }
     }
 
-    const memberType = detectMemberType(membership)
+    const memberType = detectMemberType(membership, rawMemberType)
 
     // Build linked stay display
     let linkedDisplay = ''
@@ -154,7 +155,7 @@ function parseLeadsheet(text) {
         memberships: membership ? [membership] : [],
         memberType, nationality,
         linkedStay: linkedDisplay,
-        email, phone, apptDate, apptTime, tourCol, notes,
+        email, phone, apptDate, apptTime, tourCol, notes, rawMemberType,
       }
       guestOrder.push(name)
     }
@@ -163,7 +164,7 @@ function parseLeadsheet(text) {
   return guestOrder.map((name, i) => {
     const g = guestMap[name]
     const membership = g.memberships.join(' + ') || g.memberType
-    const memberType = detectMemberType(g.memberships[0] || '')
+    const memberType = detectMemberType(g.memberships[0] || '', g.rawMemberType)
     const status = detectStatus(g.notes, g.apptDate, g.tourCol)
     const initials = name.split(/\s+/).filter(Boolean).map(w => w[0]?.toUpperCase()).slice(0, 2).join('')
 
