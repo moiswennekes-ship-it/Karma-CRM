@@ -25,11 +25,14 @@ function col(cols, idx) {
   return (cols[idx] || '').trim()
 }
 
-function detectMemberType(membership) {
+function detectMemberType(membership, rawMemberType) {
+  const r = (rawMemberType || '').toLowerCase()
+  if (r.includes('fractional')) return 'Fractional Owner'
+  if (r.includes('discovery')) return 'KC Discovery'
+  if (r.includes('guest member')) return 'KC Guest Member'
   if (!membership) return 'KC Member'
   const m = membership.toLowerCase()
-  // Fractional patterns: KRK, KM/, KB/, KK/, KRS, KJ, T0F, T1F, T2F
-  if (/^k[a-z]{1,3}\s*\//.test(m) || m.includes('t0f') || m.includes('t1f') || m.includes('t2f')) {
+  if (/^k[a-z]{1,3}\s*\//.test(m) || m.includes('t0f') || m.includes('t1f') || m.includes('t2f') || m.includes('t3f')) {
     return 'Fractional Owner'
   }
   return 'KC Member'
