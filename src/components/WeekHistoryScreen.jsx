@@ -160,7 +160,7 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
   const WeekRow = ({ week, isCurrent }) => {
     const guests = guestsByWeek[week.week_number] || []
     const isExpanded = expandedWeek === week.week_number
-    const toured = week.toured_count || guests.filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length
+    const toured = week.toured_count || guests.filter(g => ['Meeting Booked','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length
     const converted = week.converted_count || guests.filter(g => g.status === 'Converted').length
     const guestCount = isCurrent ? currentGuests.length : (week.guest_count || 0)
 
