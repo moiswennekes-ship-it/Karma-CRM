@@ -22,7 +22,7 @@ const FILTERS = [
   { label: 'Leaving Soon',  key: 'leaving' },
 ]
 
-export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSaveNotes, onDelete, onEdit, onNav }) {
+export function DashboardScreen({ guests, pipelineCounts, todayArrivals, onStatusChange, onSaveNotes, onDelete, onEdit, onNav }) {
   const [filter, setFilter] = useState('all')
   const [selectedId, setSelectedId] = useState(null)
 
@@ -50,11 +50,11 @@ export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSave
 
       {/* Stats bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        <StatCard label="Arriving Today" value={pipelineCounts.arriving} hint="↑ check in queue" hintColor="var(--ocean)" onClick={() => onNav('arrivals')} />
+        <StatCard label="Arriving Today" value={todayArrivals} hint="↑ check in queue" hintColor="var(--ocean)" onClick={() => onNav('arrivals')} />
         <StatCard label="Active Pipeline" value={guests.length} hint={`${pipelineCounts.followUp} follow-ups due`} hintColor="var(--amber)" />
-        <StatCard label="Meeting Booked" value={pipelineCounts.meetingBooked} hint="Next: 10:30 AM" hintColor="var(--palm)" />
-        <StatCard label="Hot Leads" value={pipelineCounts.hotLead} hint="2 proposals out" hintColor="var(--rose)" />
-        <StatCard label="Converted May" value={11} hint="↑ 38% vs April" hintColor="var(--palm)" />
+        <StatCard label="Meeting Booked" value={pipelineCounts.meetingBooked} hint="booked this week" hintColor="var(--palm)" />
+        <StatCard label="Hot Leads" value={pipelineCounts.hotLead} hint="high priority" hintColor="var(--rose)" />
+        <StatCard label="Converted" value={pipelineCounts.converted} hint="this week" hintColor="var(--palm)" />
       </div>
 
       {/* Content */}

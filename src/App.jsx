@@ -308,7 +308,7 @@ export default function App() {
 
         {/* SCREENS */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} onNav={setScreen} />}
+          {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} todayArrivals={todayArrivals.length} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} onNav={setScreen} />}
           {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} />}
           {screen === 'arrivals'   && <ArrivalsScreen   guests={guests} onStatusChange={updateStatus} />}
           {screen === 'ai-tools'   && <AIToolsScreen    guests={guests} />}
