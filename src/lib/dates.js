@@ -39,10 +39,14 @@ export function parseKarmaDate(dateStr) {
 export function isToday(dateStr) {
   const d = parseKarmaDate(dateStr)
   if (!d) return false
-  const today = new Date()
-  return d.getDate() === today.getDate() &&
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear()
+  // Use Bali timezone (UTC+8)
+  const baliOffset = 8 * 60
+  const now = new Date()
+  const baliNow = new Date(now.getTime() + (baliOffset - now.getTimezoneOffset()) * 60000)
+  const baliD = new Date(d.getTime() + (baliOffset - d.getTimezoneOffset()) * 60000)
+  return baliD.getDate() === baliNow.getDate() &&
+    baliD.getMonth() === baliNow.getMonth() &&
+    baliD.getFullYear() === baliNow.getFullYear()
 }
 
 export function isPast(dateStr) {
