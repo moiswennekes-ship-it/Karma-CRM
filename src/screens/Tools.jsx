@@ -78,11 +78,13 @@ export function ObjectionScreen() {
 
 // ── FEE CALCULATOR ────────────────────────────────────────────
 export function CalculatorScreen() {
-  const [fee, setFee] = useState(3500)
-  const [inflation, setInflation] = useState(5)
+  const [points, setPoints] = useState(231)
+  const [inflation, setInflation] = useState(6.8)
   const [stays, setStays] = useState(1)
   const [nights, setNights] = useState(7)
   const [hotelRate, setHotelRate] = useState(650)
+
+  const fee = Math.round(points * 6.02 + 382)
 
   let total5 = 0, total10 = 0, total25 = 0, hotelTotal10 = 0
   const rows = []
@@ -108,8 +110,9 @@ export function CalculatorScreen() {
         <Card>
           <CardHeader title="Inputs" />
           <CardBody>
-            <SliderField label="Annual Fee" value={fee} min={500} max={15000} step={100} onChange={setFee} format={v => '$' + v.toLocaleString()} />
-            <SliderField label="Annual Inflation" value={inflation} min={1} max={12} step={0.5} onChange={setInflation} format={v => v + '%'} />
+            <SliderField label="Points" value={points} min={50} max={1000} step={1} onChange={setPoints} format={v => v + ' pts'} />
+            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>Current fee: <strong>${fee.toLocaleString()}</strong> ({points} × $6.02 + $382)</div>
+            <SliderField label="Annual Inflation" value={inflation} min={1} max={10} step={0.1} onChange={setInflation} format={v => v + '%'} />
             <SliderField label="Stays Per Year" value={stays} min={0} max={8} onChange={setStays} />
             <SliderField label="Nights Per Stay" value={nights} min={1} max={21} onChange={setNights} />
             <SliderField label="Hotel Equivalent Rate" value={hotelRate} min={100} max={2500} step={50} onChange={setHotelRate} format={v => '$' + v + '/night'} />
