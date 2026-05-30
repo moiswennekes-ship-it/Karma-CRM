@@ -113,6 +113,8 @@ export function CalculatorScreen() {
             <SliderField label="Points" value={points} min={50} max={1000} step={1} onChange={setPoints} format={v => v + ' pts'} />
             <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>Current fee: <strong>${fee.toLocaleString()}</strong> ({points} × $6.02 + $382)</div>
             <SliderField label="Annual Inflation" value={inflation} min={1} max={10} step={0.1} onChange={setInflation} format={v => v + '%'} />
+            <FieldLabel>Membership End Year</FieldLabel>
+            <FieldInput value={endYear} onChange={v => setEndYear(Number(v))} type="number" />
             <SliderField label="Stays Per Year" value={stays} min={0} max={8} onChange={setStays} />
             <SliderField label="Nights Per Stay" value={nights} min={1} max={21} onChange={setNights} />
             <SliderField label="Hotel Equivalent Rate" value={hotelRate} min={100} max={2500} step={50} onChange={setHotelRate} format={v => '$' + v + '/night'} />
@@ -120,11 +122,10 @@ export function CalculatorScreen() {
         </Card>
 
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 14 }}>
             {[
-              { label: '5 Year Total', val: fmt(total5), sub: 'fees paid', grad: 'linear-gradient(135deg,var(--ocean),#1A7A8F)' },
-              { label: '10 Year Total', val: fmt(total10), sub: `vs ${fmt(hotelTotal10)} hotels`, grad: 'linear-gradient(135deg,#1A5F6E,#2D5A3D)' },
-              { label: '25 Year Total', val: fmt(total25), sub: 'total projection', grad: 'linear-gradient(135deg,var(--palm),#1A3D2A)' },
+              { label: `Full Membership Total (to ${endYear})`, val: fmt(totalFull), sub: 'annual payments', grad: 'linear-gradient(135deg,var(--ocean),#1A7A8F)' },
+              { label: `Bi-Annual Total (to ${endYear})`, val: fmt(totalBi), sub: 'every other year', grad: 'linear-gradient(135deg,var(--palm),#1A3D2A)' },
             ].map(c => (
               <div key={c.label} style={{ background: c.grad, color: 'white', borderRadius: 12, padding: '16px 14px', textAlign: 'center' }}>
                 <div style={{ fontSize: 10, opacity: .7, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{c.label}</div>
@@ -135,12 +136,12 @@ export function CalculatorScreen() {
           </div>
 
           <Card>
-            <CardHeader title="Year-by-Year (25 years)" />
+            <CardHeader title={`Year-by-Year (${totalYears} years to ${endYear})`} />
             <CardBody style={{ padding: 0 }}>
               {rows.map(r => (
-                <div key={r.year} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 12.5 }}>
-                  <span style={{ color: 'var(--ink3)' }}>Year {r.year}</span>
-                  <span style={{ fontWeight: 500 }}>{fmt(r.fee)}</span>
+                <div key={r.year} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 12.5, opacity: biAnnual && !r.isBiYear ? 0.3 : 1 }}>
+                  <span style={{ color: 'var(--ink3)' }}>{r.calYear}</span>
+                  <span style={{ fontWeight: 500 }}>{biAnnual && !r.isBiYear ? '—' : fmt(r.fee)}</span>
                   <span style={{ fontSize: 11, color: 'var(--palm)' }}>hotel equiv: {fmt(r.hotel)}</span>
                 </div>
               ))}
