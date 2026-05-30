@@ -85,6 +85,7 @@ export function CalculatorScreen() {
   const [hotelRate, setHotelRate] = useState(650)
   const [endYear, setEndYear] = useState(2045)
   const [biAnnual, setBiAnnual] = useState(false)
+  const [biOdd, setBiOdd] = useState(true)
 
   const fee = Math.round(points * 6.02 + 382)
   const currentYear = new Date().getFullYear()
@@ -95,10 +96,11 @@ export function CalculatorScreen() {
   for (let y = 1; y <= totalYears; y++) {
     const yFee = Math.round(fee * Math.pow(1 + inflation / 100, y - 1))
     const hVal = Math.round(hotelRate * nights * stays)
-    const isBiYear = y % 2 === 1
+    const calYear = currentYear + y
+    const isBiYear = biOdd ? calYear % 2 === 1 : calYear % 2 === 0
     totalFull += yFee
     if (isBiYear) totalBi += yFee
-    rows.push({ year: y, calYear: currentYear + y, fee: yFee, hotel: hVal, isBiYear })
+    rows.push({ year: y, calYear, fee: yFee, hotel: hVal, isBiYear })
   }
 
   const fmt = (n) => '$' + Math.round(n).toLocaleString()
@@ -123,6 +125,19 @@ export function CalculatorScreen() {
               <input type="checkbox" checked={biAnnual} onChange={e => setBiAnnual(e.target.checked)} id="biannual" />
               <label htmlFor="biannual" style={{ fontSize: 13, cursor: 'pointer' }}>Bi-annual membership</label>
             </div>
+            {biAnnual && (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                {[{label: 'Odd years (2025, 2027...)', val: true}, {label: 'Even years (2026, 2028...)', val: false}].map(opt => (
+                  <button key={opt.label} onClick={() => setBiOdd(opt.val)} style={{
+                    flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 11, cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', fontWeight: 500,
+                    background: biOdd === opt.val ? 'var(--ocean)' : 'white',
+                    color: biOdd === opt.val ? 'white' : 'var(--ink2)',
+                    border: `1px solid ${biOdd === opt.val ? 'var(--ocean)' : 'var(--border2)'}`,
+                  }}>{opt.label}</button>
+                ))}
+              </div>
+            )}
             <SliderField label="Stays Per Year" value={stays} min={0} max={8} onChange={setStays} />
             <SliderField label="Nights Per Stay" value={nights} min={1} max={21} onChange={setNights} />
             <SliderField label="Hotel Equivalent Rate" value={hotelRate} min={100} max={2500} step={50} onChange={setHotelRate} format={v => '$' + v + '/night'} />
