@@ -116,13 +116,7 @@ function ArrivalsScreen({ guests, onStatusChange }) {
                   </div>
                 </div>
                 <div style={{ padding: '12px 16px' }}>
-                  <div style={{ fontSize: 12, color: 'var(--ink3)', marginBottom: 10 }}>{g.notes}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ flex: 1, height: 3, background: 'var(--sand3)', borderRadius: 2 }}>
-                      <div style={{ width: `${g.upgrade_score}%`, height: '100%', background: scoreColor, borderRadius: 2 }} />
-                    </div>
-
-                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--ink3)' }}>{g.notes}</div>
                 </div>
               </div>
             )
