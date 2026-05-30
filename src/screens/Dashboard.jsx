@@ -58,9 +58,9 @@ export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSave
       </div>
 
       {/* Content */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1 }}>
         {/* Left col */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px', minWidth: 0 }}>
+        <div style={{ flex: 1, padding: '18px 20px', minWidth: 0 }}>
           <SectionHeader
             title="Live Member Pipeline"
             right={
