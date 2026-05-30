@@ -83,18 +83,22 @@ export function CalculatorScreen() {
   const [stays, setStays] = useState(1)
   const [nights, setNights] = useState(7)
   const [hotelRate, setHotelRate] = useState(650)
+  const [endYear, setEndYear] = useState(2045)
+  const [biAnnual, setBiAnnual] = useState(false)
 
   const fee = Math.round(points * 6.02 + 382)
+  const currentYear = new Date().getFullYear()
+  const totalYears = Math.max(1, endYear - currentYear)
 
-  let total5 = 0, total10 = 0, total25 = 0, hotelTotal10 = 0
+  let totalFull = 0, totalBi = 0
   const rows = []
-  for (let y = 1; y <= 25; y++) {
+  for (let y = 1; y <= totalYears; y++) {
     const yFee = Math.round(fee * Math.pow(1 + inflation / 100, y - 1))
     const hVal = Math.round(hotelRate * nights * stays)
-    if (y <= 5) total5 += yFee
-    if (y <= 10) { total10 += yFee; hotelTotal10 += hVal }
-    total25 += yFee
-    rows.push({ year: y, fee: yFee, hotel: hVal })
+    const isBiYear = y % 2 === 1
+    totalFull += yFee
+    if (isBiYear) totalBi += yFee
+    rows.push({ year: y, calYear: currentYear + y, fee: yFee, hotel: hVal, isBiYear })
   }
 
   const fmt = (n) => '$' + Math.round(n).toLocaleString()
@@ -115,6 +119,10 @@ export function CalculatorScreen() {
             <SliderField label="Annual Inflation" value={inflation} min={1} max={10} step={0.1} onChange={setInflation} format={v => v + '%'} />
             <FieldLabel>Membership End Year</FieldLabel>
             <FieldInput value={endYear} onChange={v => setEndYear(Number(v))} type="number" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0' }}>
+              <input type="checkbox" checked={biAnnual} onChange={e => setBiAnnual(e.target.checked)} id="biannual" />
+              <label htmlFor="biannual" style={{ fontSize: 13, cursor: 'pointer' }}>Bi-annual membership</label>
+            </div>
             <SliderField label="Stays Per Year" value={stays} min={0} max={8} onChange={setStays} />
             <SliderField label="Nights Per Stay" value={nights} min={1} max={21} onChange={setNights} />
             <SliderField label="Hotel Equivalent Rate" value={hotelRate} min={100} max={2500} step={50} onChange={setHotelRate} format={v => '$' + v + '/night'} />
