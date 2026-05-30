@@ -111,7 +111,7 @@ export function DashboardScreen({ guests, pipelineCounts, onStatusChange, onSave
         </div>
 
         {/* Right panel */}
-        <div style={{ width: 330, borderLeft: '1px solid var(--border)', overflowY: 'auto', background: 'white', flexShrink: 0 }}>
+        <div style={{ width: 330, borderLeft: '1px solid var(--border)', background: 'white', flexShrink: 0 }}>
           <div style={{
             padding: '14px 18px', borderBottom: '1px solid var(--border)',
             position: 'sticky', top: 0, background: 'white', zIndex: 5,
