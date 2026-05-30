@@ -1,3 +1,4 @@
+import { hasLeft, isLeavingSoon, isToday } from './lib/dates'
 import React, { useState } from 'react'
 import { useGuests } from './hooks/useGuests'
 import { DashboardScreen } from './screens/Dashboard'
@@ -86,7 +87,7 @@ function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete, onEdit })
 
 // ── ARRIVALS SCREEN ───────────────────────────────────────────
 function ArrivalsScreen({ guests, onStatusChange }) {
-  const today = guests.filter(g => g.arrival_date?.toLowerCase().includes('today'))
+  const today = guests.filter(g => isToday(g.arrival_date))
   const [selectedId, setSelectedId] = useState(null)
   const selected = guests.find(g => g.id === selectedId)
 
