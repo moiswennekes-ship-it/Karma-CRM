@@ -51,7 +51,7 @@ export function DashboardScreen({ guests, pipelineCounts, todayArrivals, onStatu
       {/* Stats bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <StatCard label="Arriving Today" value={todayArrivals} hint="↑ check in queue" hintColor="var(--ocean)" onClick={() => onNav('arrivals')} />
-        <StatCard label="Active Pipeline" value={guests.length} hint={`${pipelineCounts.followUp} follow-ups due`} hintColor="var(--amber)" />
+        <StatCard label="Active Pipeline" value={guests.filter(g => g.status !== 'Departed').length} hint={`${pipelineCounts.followUp} follow-ups due`} hintColor="var(--amber)" />
         <StatCard label="Meeting Booked" value={pipelineCounts.meetingBooked} hint="booked this week" hintColor="var(--palm)" />
         <StatCard label="Hot Leads" value={pipelineCounts.hotLead} hint="high priority" hintColor="var(--rose)" />
         <StatCard label="Converted" value={pipelineCounts.converted} hint="this week" hintColor="var(--palm)" />
