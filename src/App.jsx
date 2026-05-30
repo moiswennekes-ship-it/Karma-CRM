@@ -205,7 +205,7 @@ export default function App() {
   const { guests, loading, error, addGuest, editGuest, updateStatus, saveNotes, removeGuest, pipelineCounts, todayArrivals } = useGuests()
   const [screen, setScreen] = useState('dashboard')
   const [addOpen, setAddOpen] = useState(false)
-  const [currentWeek, setCurrentWeek] = useState(21)
+  const [currentWeek, setCurrentWeek] = useState(22)
   const [editingGuest, setEditingGuest] = useState(null)
 
   const meta = SCREEN_META[screen] || SCREEN_META.dashboard
