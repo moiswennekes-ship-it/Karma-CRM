@@ -107,7 +107,7 @@ function parseLeadsheet(text) {
     const nights      = parseInt(col(cols, 5)) || 0
     const bookingNum  = col(cols, 6)
     const membership  = col(cols, 11).replace(/\n/g, ' + ')
-    const rawMemberType = col(cols, 7)
+    const rawMemberType = col(cols, 8)
     const nationality = col(cols, 12)
     const linkedStay  = col(cols, 13)  // YES / NO
     const linkedDetail = col(cols, 14) // FROM KM, TO KJ, 2nd weeks etc
