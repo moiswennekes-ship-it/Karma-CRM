@@ -12,9 +12,9 @@ export function MorningBriefing({ guests }) {
 
   // Use real date comparisons
   const activeGuests = guests.filter(g => !hasLeft(g.depart_date))
-  const arrivingToday = guests.filter(g => isToday(g.arrival_date))
+  const arrivingToday = guests.filter(g => isToday(g.arrival_date) && !(g.linked_stay || '').toLowerCase().includes('2nd'))
   const inHouse = guests.filter(g => isInHouse(g.arrival_date, g.depart_date))
-  const notContacted = activeGuests.filter(g => g.status === 'Arriving Soon')
+  const notContacted = activeGuests.filter(g => g.status === 'Arriving Soon' && !(g.linked_stay || '').toLowerCase().includes('2nd'))
   const followUps = activeGuests.filter(g => g.status === 'Follow-Up')
   const meetingsToday = activeGuests.filter(g => g.status === 'Meeting Booked')
   const hotLeads = activeGuests.filter(g => ['Hot Lead', 'Proposal Sent'].includes(g.status))
