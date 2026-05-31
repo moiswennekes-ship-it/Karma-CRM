@@ -105,7 +105,7 @@ export function DashboardScreen({ guests, pipelineCounts, todayArrivals, onStatu
               </div>
             )}
             {filtered.map(g => (
-              <GuestCard key={g.id} guest={g} selected={selectedId === g.id} onClick={setSelectedId} />
+              <GuestCard key={g.id} guest={g} selected={selectedId === g.id} onClick={setSelectedId} onStatusChange={onStatusChange} />
             ))}
           </div>
         </div>

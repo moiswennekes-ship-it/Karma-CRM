@@ -72,7 +72,7 @@ function GuestsScreen({ guests, onStatusChange, onSaveNotes, onDelete, onEdit })
           </div>
         } />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          {filtered.map(g => <GuestCard key={g.id} guest={g} selected={selectedId === g.id} onClick={setSelectedId} />)}
+          {filtered.map(g => <GuestCard key={g.id} guest={g} selected={selectedId === g.id} onClick={setSelectedId} onStatusChange={updateStatus} />)}
         </div>
       </div>
       <div style={{ width: 330, borderLeft: '1px solid var(--border)', overflowY: 'auto', background: 'white', flexShrink: 0 }}>

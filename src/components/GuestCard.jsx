@@ -2,7 +2,7 @@ import React from 'react'
 import { Avatar, StatusPill } from './UI'
 import { hasLeft, isLeavingSoon, formatDaysLeft } from '../lib/dates'
 
-export function GuestCard({ guest, selected, onClick }) {
+export function GuestCard({ guest, selected, onClick, onStatusChange }) {
   const departed = hasLeft(guest.depart_date)
   const leavingSoon = isLeavingSoon(guest.depart_date, 2)
 
@@ -79,9 +79,51 @@ export function GuestCard({ guest, selected, onClick }) {
         )}
       </div>
 
-      {/* Status pill */}
-      <div style={{ flexShrink: 0 }}>
+      {/* Right side */}
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
         <StatusPill status={guest.status} />
+
+        {/* Quick actions */}
+        {!departed && onStatusChange && (
+          <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+            {guest.whatsapp && (
+              
+                href={`https://wa.me/${guest.whatsapp.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 28, height: 28, borderRadius: 8,
+                  background: '#25D366', color: 'white',
+                  fontSize: 14, textDecoration: 'none',
+                }}
+                title="Open WhatsApp"
+              >
+                <i className="ti ti-brand-whatsapp" />
+              </a>
+            )}
+            {[
+              { status: 'Contacted', icon: 'ti-message', color: '#6E6E73', bg: '#F3F2EE' },
+              { status: 'Meeting Booked', icon: 'ti-calendar', color: '#B8762A', bg: '#FBF5EB' },
+              { status: 'Follow-Up', icon: 'ti-bell', color: '#C0504A', bg: '#FBF0EF' },
+              { status: 'Converted', icon: 'ti-check', color: '#2D5A3D', bg: '#EAF2ED' },
+            ].filter(s => s.status !== guest.status).slice(0, 3).map(s => (
+              <button
+                key={s.status}
+                onClick={() => onStatusChange(guest.id, s.status)}
+                title={s.status}
+                style={{
+                  width: 28, height: 28, borderRadius: 8, border: 'none',
+                  background: s.bg, color: s.color, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14,
+                }}
+              >
+                <i className={`ti ${s.icon}`} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
