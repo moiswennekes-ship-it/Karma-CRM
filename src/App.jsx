@@ -273,7 +273,7 @@ export default function App() {
         </nav>
 
         <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: 'white' }}>JR</div>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: 'white' }}>MW</div>
           <div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)' }}>Mois Wennekes</div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,.28)' }}>Member Relations · Bali</div>
