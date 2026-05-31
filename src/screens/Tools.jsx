@@ -184,6 +184,7 @@ export function ComparisonScreen() {
   const [fPrice, setFPrice] = useState(45000)
   const [fExit, setFExit] = useState(52000)
   const [endYear, setEndYear] = useState(2042)
+  const fEndYear = 2042
 
   const currentYear = new Date().getFullYear()
   const years = Math.max(1, endYear - currentYear)
@@ -229,7 +230,7 @@ export function ComparisonScreen() {
             <FieldLabel>Purchase Price ($)</FieldLabel>
             <FieldInput value={fPrice} onChange={v => setFPrice(Number(v))} type="number" />
             <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>No ongoing maintenance fees — one-time purchase only.</div>
-            <FieldLabel>Projected Exit Value at {endYear} ($)</FieldLabel>
+            <FieldLabel>Projected Exit Value at 2042 ($)</FieldLabel>
             <FieldInput value={fExit} onChange={v => setFExit(Number(v))} type="number" />
           </CardBody>
         </Card>
@@ -249,8 +250,8 @@ export function ComparisonScreen() {
               { label: 'Fractional ownership', rows: [
                 ['Purchase price', fmt(fPrice), null],
                 ['Ongoing fees', '$0', true],
-                [`Projected exit value at ${endYear}`, fmt(fExit), true],
-                [`Net cost to ${endYear}`, fmt(Math.max(0, fTotal)), fTotal < cTotal],
+                ['Projected exit value at 2042', fmt(fExit), true],
+                ['Net cost to 2042', fmt(Math.max(0, fTotal)), fTotal < cTotal],
                 ['Equity / ownership', 'Deeded title', true],
               ]},
             ].map(col => (
