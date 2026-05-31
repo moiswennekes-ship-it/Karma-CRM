@@ -87,7 +87,7 @@ export function GuestCard({ guest, selected, onClick, onStatusChange }) {
         {!departed && onStatusChange && (
           <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
             {guest.whatsapp && (
-              
+              <a
                 href={`https://wa.me/${guest.whatsapp.replace(/[^0-9]/g, '')}`}
                 target="_blank"
                 rel="noreferrer"
