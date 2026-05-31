@@ -178,16 +178,25 @@ export function CalculatorScreen() {
 
 // ── FRACTIONAL COMPARISON ─────────────────────────────────────
 export function ComparisonScreen() {
-  const [cFee, setCFee] = useState(4200)
-  const [cNights, setCNights] = useState(7)
-  const [cExit, setCExit] = useState(0)
+  const [cPoints, setCPoints] = useState(231)
+  const [cInflation, setCInflation] = useState(6.8)
+  const [cBiAnnual, setCBiAnnual] = useState(false)
   const [fPrice, setFPrice] = useState(45000)
-  const [fFee, setFFee] = useState(2800)
   const [fExit, setFExit] = useState(52000)
+  const [endYear, setEndYear] = useState(2042)
 
-  const years = 10
-  const cTotal = cFee * years - cExit
-  const fTotal = fPrice + fFee * years - fExit
+  const currentYear = new Date().getFullYear()
+  const years = Math.max(1, endYear - currentYear)
+  const cBaseFee = Math.round(cPoints * 6.02 + 382)
+
+  let cTotal = 0
+  for (let y = 1; y <= years; y++) {
+    const yFee = Math.round(cBaseFee * Math.pow(1 + cInflation / 100, y - 1))
+    if (cBiAnnual) { if (y % 2 === 1) cTotal += yFee }
+    else cTotal += yFee
+  }
+
+  const fTotal = fPrice - fExit
   const saving = cTotal - fTotal
   const fmt = (n) => '$' + Math.abs(Math.round(n)).toLocaleString()
 
@@ -195,19 +204,22 @@ export function ComparisonScreen() {
     <div style={{ overflowY: 'auto', padding: 22, flex: 1 }}>
       <SectionHeader title="Fractional Ownership Comparison" />
       <p style={{ fontSize: 12, color: 'var(--ink3)', marginBottom: 20 }}>
-        Side-by-side 10-year comparison of current membership vs fractional ownership.
+        Compare total cost of current membership fees vs fractional ownership to contract end date.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
         <Card>
           <CardHeader title="Current Membership" />
           <CardBody>
-            <FieldLabel>Annual Maintenance Fee ($)</FieldLabel>
-            <FieldInput value={cFee} onChange={v => setCFee(Number(v))} type="number" />
-            <FieldLabel>Nights Per Year</FieldLabel>
-            <FieldInput value={cNights} onChange={v => setCNights(Number(v))} type="number" />
-            <FieldLabel>Resale / Exit Value ($)</FieldLabel>
-            <FieldInput value={cExit} onChange={v => setCExit(Number(v))} type="number" />
+            <SliderField label="Points" value={cPoints} min={50} max={1000} step={1} onChange={setCPoints} format={v => v + ' pts'} />
+            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>Current fee: <strong>${cBaseFee.toLocaleString()}</strong> ({cPoints} × $6.02 + $382)</div>
+            <SliderField label="Annual Inflation" value={cInflation} min={1} max={10} step={0.1} onChange={setCInflation} format={v => v + '%'} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0' }}>
+              <input type="checkbox" checked={cBiAnnual} onChange={e => setCBiAnnual(e.target.checked)} id="cbiannual" />
+              <label htmlFor="cbiannual" style={{ fontSize: 13, cursor: 'pointer' }}>Bi-annual membership</label>
+            </div>
+            <FieldLabel>Contract End Year</FieldLabel>
+            <FieldInput value={endYear} onChange={v => setEndYear(Number(v))} type="number" />
           </CardBody>
         </Card>
 
@@ -216,30 +228,29 @@ export function ComparisonScreen() {
           <CardBody>
             <FieldLabel>Purchase Price ($)</FieldLabel>
             <FieldInput value={fPrice} onChange={v => setFPrice(Number(v))} type="number" />
-            <FieldLabel>Annual Maintenance Fee ($)</FieldLabel>
-            <FieldInput value={fFee} onChange={v => setFFee(Number(v))} type="number" />
-            <FieldLabel>Projected Exit Value in 10 years ($)</FieldLabel>
+            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>No ongoing maintenance fees — one-time purchase only.</div>
+            <FieldLabel>Projected Exit Value at {endYear} ($)</FieldLabel>
             <FieldInput value={fExit} onChange={v => setFExit(Number(v))} type="number" />
           </CardBody>
         </Card>
       </div>
 
       <Card style={{ marginBottom: 14 }}>
-        <CardHeader title="10-Year Comparison" />
+        <CardHeader title={`Comparison to ${endYear} (${years} years)`} />
         <CardBody>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             {[
               { label: 'Current membership', rows: [
-                ['Total fees paid', fmt(cFee * years), false],
-                ['Exit / resale value', fmt(cExit), true],
-                ['Net cost over 10 years', fmt(cTotal), false],
+                ['Total fees paid', fmt(cTotal), false],
+                ['Exit / resale value', '$0', null],
+                [`Net cost to ${endYear}`, fmt(cTotal), false],
                 ['Equity / ownership', '$0', false],
               ]},
               { label: 'Fractional ownership', rows: [
                 ['Purchase price', fmt(fPrice), null],
-                ['Total fees paid', fmt(fFee * years), false],
-                ['Projected exit value', fmt(fExit), true],
-                ['Net cost over 10 years', fmt(Math.max(0, fTotal)), fTotal < cTotal],
+                ['Ongoing fees', '$0', true],
+                [`Projected exit value at ${endYear}`, fmt(fExit), true],
+                [`Net cost to ${endYear}`, fmt(Math.max(0, fTotal)), fTotal < cTotal],
                 ['Equity / ownership', 'Deeded title', true],
               ]},
             ].map(col => (
@@ -261,7 +272,7 @@ export function ComparisonScreen() {
             borderRadius: 10, padding: 16, textAlign: 'center',
           }}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: saving > 0 ? 'var(--palm)' : 'var(--rose)', marginBottom: 4 }}>
-              {saving > 0 ? 'Fractional saves over 10 years' : 'Current membership costs less'}
+              {saving > 0 ? `Fractional saves to ${endYear}` : 'Current membership costs less'}
             </div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: saving > 0 ? 'var(--palm)' : 'var(--rose)' }}>
               {fmt(saving)}
