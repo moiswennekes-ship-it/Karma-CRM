@@ -106,12 +106,12 @@ export function GuestCard({ guest, selected, onClick, onStatusChange }) {
               { status: 'Contacted', icon: 'ti-message', color: '#6E6E73', bg: '#F3F2EE' },
               { status: 'Meeting Booked', icon: 'ti-calendar', color: '#B8762A', bg: '#FBF5EB' },
               { status: 'Follow-Up', icon: 'ti-bell', color: '#C0504A', bg: '#FBF0EF' },
-              { status: 'Converted', icon: 'ti-check', color: '#2D5A3D', bg: '#EAF2ED' },
+              { status: 'Converted', icon: 'ti-check', color: '#2D5A3D', bg: '#EAF2ED', label: 'Deal' },
             ].filter(s => s.status !== guest.status).slice(0, 3).map(s => (
               <button
                 key={s.status}
                 onClick={() => onStatusChange(guest.id, s.status)}
-                title={s.status}
+                title={s.label || s.status}
                 style={{
                   width: 28, height: 28, borderRadius: 8, border: 'none',
                   background: s.bg, color: s.color, cursor: 'pointer',
