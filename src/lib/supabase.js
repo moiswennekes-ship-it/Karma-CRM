@@ -110,3 +110,23 @@ export function subscribeToGuests(callback) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, callback)
     .subscribe()
 }
+
+// ── POINTS PASSPORT SURVEYS ──────────────────────────────
+
+export async function savePointsSurvey(survey) {
+  const { data, error } = await supabase
+    .from('points_surveys')
+    .insert([survey])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function getPointsSurveys(guestId) {
+  let query = supabase.from('points_surveys').select('*').order('created_at', { ascending: false })
+  if (guestId) query = query.eq('guest_id', guestId)
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}

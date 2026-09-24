@@ -183,3 +183,26 @@ insert into guests (name, initials, email, whatsapp, membership, member_type, st
 
 insert into staff (name, email, role, property, avatar_initials) values
 ('James Reid', 'james.reid@karma.com', 'Member Relations', 'Karma Kandara, Bali', 'JR');
+
+-- ── POINTS PASSPORT SURVEYS ────────────────────────
+-- Structured output of the Points Passport tour survey: how a guest told us
+-- they travel, and which package/points result that produced. Added after
+-- the initial schema — safe to run on its own against an existing database.
+create table if not exists points_surveys (
+  id            uuid primary key default uuid_generate_v4(),
+  created_at    timestamptz default now(),
+  guest_id      uuid references guests(id) on delete set null,
+  guest_name    text,
+  ownership     text,             -- 'points' | 'fractional' | 'none'
+  current_package text,
+  total_points  numeric not null,
+  recommended_points_package text,
+  recommended_fractional_package text,
+  responses     jsonb not null,   -- full survey answers + destination breakdown
+  staff_name    text default 'Mois Wennekes'
+);
+
+alter table points_surveys enable row level security;
+create policy "Allow all for authenticated" on points_surveys for all using (true);
+
+create index if not exists idx_points_surveys_guest on points_surveys(guest_id);

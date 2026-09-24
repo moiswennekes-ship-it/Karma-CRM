@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useGuests } from './hooks/useGuests'
 import { DashboardScreen } from './screens/Dashboard'
 import { ObjectionScreen, CalculatorScreen, ComparisonScreen, AIToolsScreen } from './screens/Tools'
+import { PointsPassportScreen } from './screens/PointsPassport'
 import { AddGuestModal } from './components/AddGuestModal'
 import { EditGuestModal } from './components/EditGuestModal'
 import { GuestCard } from './components/GuestCard'
@@ -19,6 +20,7 @@ const NAV = [
   { id: 'arrivals',    icon: 'ti-plane-arrival',     label: 'Arrivals Today', badge: 'arriving', badgeColor: '#B8914A' },
   { id: 'import',      icon: 'ti-table-import',      label: 'Import Leadsheet' },
   { section: 'AI Tools' },
+  { id: 'points-passport', icon: 'ti-passport',      label: 'Points Passport' },
   { id: 'ai-tools',   icon: 'ti-sparkles',           label: 'AI Generator' },
   { id: 'objections', icon: 'ti-shield',             label: 'Objection Handler' },
   { id: 'calculator', icon: 'ti-calculator',         label: 'Fee Calculator' },
@@ -32,6 +34,7 @@ const SCREEN_META = {
   dashboard:   { title: 'Good morning, Mois', sub: new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' }) + ' · Bali · Check your arrivals and pipeline' },
   guests:      { title: 'All Members',          sub: 'View, filter and manage all member records' },
   arrivals:    { title: "Today's Arrivals",     sub: 'Guests checking in today — contact status and welcome messages' },
+  'points-passport': { title: 'Points Passport', sub: "Live tour survey \u2014 score a guest's travel habits against real Karma points packages" },
   'ai-tools':  { title: 'AI Communication Tools', sub: 'Generate personalized messages, proposals and meeting prep' },
   objections:  { title: 'Objection Handler',    sub: 'AI-crafted responses to any membership objection' },
   calculator:  { title: 'Fee Calculator',       sub: 'Project fees from membership start to end date' },
@@ -305,6 +308,7 @@ export default function App() {
           {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} todayArrivals={todayArrivals.length} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} onNav={setScreen} />}
           {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} />}
           {screen === 'arrivals'   && <ArrivalsScreen   guests={guests} onStatusChange={updateStatus} />}
+          {screen === 'points-passport' && <PointsPassportScreen guests={guests} addGuest={addGuest} onGoToGuest={() => setScreen('guests')} />}
           {screen === 'ai-tools'   && <AIToolsScreen    guests={guests} />}
           {screen === 'objections' && <ObjectionScreen />}
           {screen === 'calculator' && <CalculatorScreen />}
