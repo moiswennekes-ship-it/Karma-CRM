@@ -42,7 +42,7 @@ function GuestCard({ g, i }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
         <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color }}>{g.status}</span>
-        {g.upgrade_score > 0 && <div style={{ fontSize: 11, color: scoreColor }}>↑ {g.upgrade_score}%</div>}
+        {g.upgrade_score > 0 && <div style={{ fontSize: 11, color: '#2D5A3D' }}>↑ {g.upgrade_score}%</div>}
       </div>
     </div>
   )
