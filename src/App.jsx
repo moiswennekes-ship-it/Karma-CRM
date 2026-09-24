@@ -11,6 +11,7 @@ import { GuestProfile } from './components/GuestProfile'
 import { Btn, SectionHeader, StatusPill, Avatar } from './components/UI'
 import { ImportScreen } from './components/ImportScreen'
 import { WeekHistoryScreen } from './components/WeekHistoryScreen'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // ── NAVIGATION CONFIG ─────────────────────────────────────────
 const NAV = [
@@ -305,17 +306,19 @@ export default function App() {
 
         {/* SCREENS */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} todayArrivals={todayArrivals.length} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} onNav={setScreen} />}
-          {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} />}
-          {screen === 'arrivals'   && <ArrivalsScreen   guests={guests} onStatusChange={updateStatus} />}
-          {screen === 'points-passport' && <PointsPassportScreen guests={guests} addGuest={addGuest} onGoToGuest={() => setScreen('guests')} />}
-          {screen === 'ai-tools'   && <AIToolsScreen    guests={guests} />}
-          {screen === 'objections' && <ObjectionScreen />}
-          {screen === 'calculator' && <CalculatorScreen />}
-          {screen === 'comparison' && <ComparisonScreen />}
-          {screen === 'pipeline'   && <PipelineScreen   guests={guests} onNav={setScreen} />}
-          {screen === 'import'    && <ImportScreen onImport={(g) => addGuest({ ...g, week_number: currentWeek, week_label: `Week ${currentWeek}` })} />}
-          {screen === 'weeks'     && <WeekHistoryScreen currentWeek={currentWeek} onStartNewWeek={(wk) => { setCurrentWeek(wk); setScreen('dashboard') }} />}
+          <ErrorBoundary key={screen} label={SCREEN_META[screen]?.title}>
+            {screen === 'dashboard'  && <DashboardScreen  guests={guests} pipelineCounts={pipelineCounts} todayArrivals={todayArrivals.length} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} onNav={setScreen} />}
+            {screen === 'guests'     && <GuestsScreen     guests={guests} onStatusChange={updateStatus} onSaveNotes={saveNotes} onDelete={removeGuest} onEdit={setEditingGuest} />}
+            {screen === 'arrivals'   && <ArrivalsScreen   guests={guests} onStatusChange={updateStatus} />}
+            {screen === 'points-passport' && <PointsPassportScreen guests={guests} addGuest={addGuest} onGoToGuest={() => setScreen('guests')} />}
+            {screen === 'ai-tools'   && <AIToolsScreen    guests={guests} />}
+            {screen === 'objections' && <ObjectionScreen />}
+            {screen === 'calculator' && <CalculatorScreen />}
+            {screen === 'comparison' && <ComparisonScreen />}
+            {screen === 'pipeline'   && <PipelineScreen   guests={guests} onNav={setScreen} />}
+            {screen === 'import'    && <ImportScreen onImport={(g) => addGuest({ ...g, week_number: currentWeek, week_label: `Week ${currentWeek}` })} />}
+            {screen === 'weeks'     && <WeekHistoryScreen currentWeek={currentWeek} onStartNewWeek={(wk) => { setCurrentWeek(wk); setScreen('dashboard') }} />}
+          </ErrorBoundary>
         </div>
       </div>
 
