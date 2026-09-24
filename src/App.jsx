@@ -1,4 +1,4 @@
-import { hasLeft, isLeavingSoon, isToday } from './lib/dates'
+import { isToday } from './lib/dates'
 import React, { useState } from 'react'
 import { useGuests } from './hooks/useGuests'
 import { DashboardScreen } from './screens/Dashboard'

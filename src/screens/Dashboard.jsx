@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { GuestCard } from '../components/GuestCard'
 import { GuestProfile } from '../components/GuestProfile'
-import { StatCard, SectionHeader, Btn } from '../components/UI'
+import { StatCard, SectionHeader } from '../components/UI'
 import { MorningBriefing } from '../components/MorningBriefing'
 import { ClosingWindowAlerts } from '../components/ClosingWindowAlerts'
 import { hasLeft, isLeavingSoon, isToday } from '../lib/dates'

@@ -63,6 +63,7 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
   useEffect(() => {
     loadWeeks()
     loadGuestsForWeek(currentWeek || 21)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function loadWeeks() {

@@ -184,7 +184,6 @@ export function ComparisonScreen() {
   const [fPrice, setFPrice] = useState(45000)
   const [fExit, setFExit] = useState(52000)
   const [endYear, setEndYear] = useState(2042)
-  const fEndYear = 2042
 
   const currentYear = new Date().getFullYear()
   const years = Math.max(1, endYear - currentYear)
