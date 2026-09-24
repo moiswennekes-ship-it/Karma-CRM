@@ -111,6 +111,30 @@ export function subscribeToGuests(callback) {
     .subscribe()
 }
 
+// ── STAFF / TEAM ──────────────────────────────────────────────
+
+export async function getStaffList() {
+  const { data, error } = await supabase
+    .from('staff')
+    .select('*')
+    .order('name', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+// Manager-only in practice: RLS only returns rows for reps whose guests
+// the current user is allowed to see (their own, or all of them if the
+// current user is a manager).
+export async function getGuestsForRep(staffId) {
+  const { data, error } = await supabase
+    .from('guests')
+    .select('*')
+    .eq('assigned_to', staffId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
 // ── POINTS PASSPORT SURVEYS ──────────────────────────────
 
 export async function savePointsSurvey(survey) {

@@ -9,7 +9,7 @@ import {
 } from '../lib/supabase'
 import { hasLeft, isToday } from '../lib/dates'
 
-export function useGuests() {
+export function useGuests(assignedTo) {
   const [guests, setGuests] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -75,10 +75,11 @@ export function useGuests() {
       status: guestData.status || 'Arriving Soon',
       upgrade_score: 0,
       color_index: guests.length % 5,
+      assigned_to: guestData.assigned_to || assignedTo || null,
     }
     const created = await createGuest(newGuest)
     return created
-  }, [guests.length])
+  }, [guests.length, assignedTo])
 
   // Update a guest field or fields
   const editGuest = useCallback(async (id, updates) => {

@@ -206,3 +206,146 @@ alter table points_surveys enable row level security;
 create policy "Allow all for authenticated" on points_surveys for all using (true);
 
 create index if not exists idx_points_surveys_guest on points_surveys(guest_id);
+
+-- ── AUTH + RLS LOCKDOWN ────────────────────────────────────
+-- Staff accounts are Supabase Auth users, restricted to @karma.com emails.
+-- Each guest belongs to exactly one rep (assigned_to); reps only see their
+-- own guests, managers can see everyone's.
+
+alter table staff add column if not exists user_id uuid references auth.users(id) on delete cascade;
+alter table staff add column if not exists is_manager boolean not null default false;
+create unique index if not exists idx_staff_user_id on staff(user_id);
+
+alter table guests add column if not exists assigned_to uuid references staff(id) on delete set null;
+create index if not exists idx_guests_assigned_to on guests(assigned_to);
+
+-- Reject signups outside the company domain
+create or replace function public.enforce_karma_email()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if NEW.email !~* '^[a-zA-Z0-9._%+-]+@karma\.com$' then
+    raise exception 'Only @karma.com email addresses can create an account.';
+  end if;
+  return NEW;
+end;
+$$;
+
+drop trigger if exists trg_enforce_karma_email on auth.users;
+create trigger trg_enforce_karma_email
+before insert on auth.users
+for each row execute function public.enforce_karma_email();
+
+-- Auto-create (or link, for pre-seeded rows like James Reid) a staff row
+-- for every new auth user.
+create or replace function public.handle_new_staff()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  insert into public.staff (user_id, name, email, avatar_initials)
+  values (
+    NEW.id,
+    coalesce(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    NEW.email,
+    upper(left(regexp_replace(coalesce(NEW.raw_user_meta_data->>'name', NEW.email), '[^A-Za-z ]', '', 'g'), 2))
+  )
+  on conflict (email) do update set user_id = excluded.user_id;
+  return NEW;
+end;
+$$;
+
+drop trigger if exists trg_handle_new_staff on auth.users;
+create trigger trg_handle_new_staff
+after insert on auth.users
+for each row execute function public.handle_new_staff();
+
+create or replace function public.is_manager()
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select coalesce((select is_manager from staff where user_id = auth.uid()), false);
+$$;
+
+create or replace function public.my_staff_id()
+returns uuid
+language sql
+security definer
+stable
+as $$
+  select id from staff where user_id = auth.uid();
+$$;
+
+-- Replace the old open "allow all" policies with role-aware ones
+drop policy if exists "Allow all for authenticated" on guests;
+drop policy if exists "Allow all for authenticated" on interactions;
+drop policy if exists "Allow all for authenticated" on ai_messages;
+drop policy if exists "Allow all for authenticated" on objection_responses;
+drop policy if exists "Allow all for authenticated" on staff;
+drop policy if exists "Allow all for authenticated" on points_surveys;
+
+create policy "guests_select" on guests for select using (
+  auth.role() = 'authenticated' and (assigned_to = public.my_staff_id() or public.is_manager())
+);
+create policy "guests_insert" on guests for insert with check (
+  auth.role() = 'authenticated' and assigned_to = public.my_staff_id()
+);
+create policy "guests_update" on guests for update using (
+  auth.role() = 'authenticated' and assigned_to = public.my_staff_id()
+);
+create policy "guests_delete" on guests for delete using (
+  auth.role() = 'authenticated' and assigned_to = public.my_staff_id()
+);
+
+create policy "interactions_select" on interactions for select using (
+  auth.role() = 'authenticated' and (
+    public.is_manager() or guest_id in (select id from guests where assigned_to = public.my_staff_id())
+  )
+);
+create policy "interactions_insert" on interactions for insert with check (
+  auth.role() = 'authenticated' and guest_id in (select id from guests where assigned_to = public.my_staff_id())
+);
+create policy "interactions_update" on interactions for update using (
+  auth.role() = 'authenticated' and guest_id in (select id from guests where assigned_to = public.my_staff_id())
+);
+create policy "interactions_delete" on interactions for delete using (
+  auth.role() = 'authenticated' and guest_id in (select id from guests where assigned_to = public.my_staff_id())
+);
+
+create policy "ai_messages_select" on ai_messages for select using (
+  auth.role() = 'authenticated' and (
+    public.is_manager() or guest_id in (select id from guests where assigned_to = public.my_staff_id())
+  )
+);
+create policy "ai_messages_insert" on ai_messages for insert with check (
+  auth.role() = 'authenticated' and guest_id in (select id from guests where assigned_to = public.my_staff_id())
+);
+
+-- Objection responses aren't guest-pipeline data (reusable AI scratchpad
+-- output, guest_id nullable) — keep these authenticated-only.
+create policy "objection_responses_all" on objection_responses for all using (auth.role() = 'authenticated');
+
+create policy "points_surveys_select" on points_surveys for select using (
+  auth.role() = 'authenticated' and (
+    public.is_manager() or guest_id is null or guest_id in (select id from guests where assigned_to = public.my_staff_id())
+  )
+);
+create policy "points_surveys_insert" on points_surveys for insert with check (auth.role() = 'authenticated');
+
+-- Everyone authenticated can read the staff directory (needed for the
+-- Team screen and avatars). No insert/update/delete policy is defined for
+-- staff from the client on purpose: rows are only written by the
+-- handle_new_staff trigger, so a rep can never self-promote to manager.
+create policy "staff_select" on staff for select using (auth.role() = 'authenticated');
+
+-- The `weeks` table (added in a later migration, not shown above) still
+-- had the old open policy — lock it down too. No per-rep ownership here on
+-- purpose: the current week counter is shared team state, not owned by an
+-- individual, so authenticated-only (not per-rep) is correct.
+drop policy if exists "Allow all for authenticated" on weeks;
+create policy "weeks_all" on weeks for all using (auth.role() = 'authenticated');

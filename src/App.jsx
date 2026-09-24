@@ -12,6 +12,9 @@ import { Btn, SectionHeader, StatusPill, Avatar } from './components/UI'
 import { ImportScreen } from './components/ImportScreen'
 import { WeekHistoryScreen } from './components/WeekHistoryScreen'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useAuth } from './hooks/useAuth'
+import { LoginScreen } from './screens/Login'
+import { TeamScreen } from './screens/Team'
 
 // ── NAVIGATION CONFIG ─────────────────────────────────────────
 const NAV = [
@@ -29,6 +32,8 @@ const NAV = [
   { section: 'Reports' },
   { id: 'weeks',      icon: 'ti-history',              label: 'Week History' },
   { id: 'pipeline',   icon: 'ti-chart-bar',            label: 'Pipeline View' },
+  { section: 'Team', managerOnly: true },
+  { id: 'team',       icon: 'ti-users-group',          label: 'Team', managerOnly: true },
 ]
 
 const SCREEN_META = {
@@ -43,6 +48,7 @@ const SCREEN_META = {
   import:     { title: 'Import Leadsheet',   sub: 'Paste your weekly leadsheet and import all guests automatically' },
   weeks:      { title: 'Week History',        sub: 'View past weeks, start a new week, and track your conversion history' },
   pipeline:    { title: 'Pipeline View',        sub: 'All active guests grouped by stage' },
+  team:        { title: 'Team',                 sub: 'View each rep\'s pipeline' },
 }
 
 // ── ALL MEMBERS SCREEN ────────────────────────────────────────
@@ -200,13 +206,45 @@ function PipelineScreen({ guests, onNav }) {
 
 // ── APP ROOT ──────────────────────────────────────────────────
 export default function App() {
-  const { guests, loading, error, addGuest, editGuest, updateStatus, saveNotes, removeGuest, pipelineCounts, todayArrivals } = useGuests()
+  const { session, staff, isManager, loading: authLoading, error: authError, signIn, signUp, signOut } = useAuth()
+  const { guests, loading, error, addGuest, editGuest, updateStatus, saveNotes, removeGuest, pipelineCounts, todayArrivals } = useGuests(staff?.id)
   const [screen, setScreen] = useState('dashboard')
   const [addOpen, setAddOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(22)
   const [editingGuest, setEditingGuest] = useState(null)
 
-  const meta = SCREEN_META[screen] || SCREEN_META.dashboard
+  const firstName = staff?.name ? staff.name.split(' ')[0] : ''
+  const meta = { ...(SCREEN_META[screen] || SCREEN_META.dashboard) }
+  if (screen === 'dashboard' && firstName) meta.title = `Good morning, ${firstName}`
+
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--sand)', fontFamily: 'var(--font-body)' }}>
+        <div className="dot-pulse" style={{ justifyContent: 'center' }}><span /><span /><span /></div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <LoginScreen onSignIn={signIn} onSignUp={signUp} />
+  }
+
+  if (!staff) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--sand)', fontFamily: 'var(--font-body)', padding: 24 }}>
+        <div style={{ background: 'white', borderRadius: 16, padding: 32, maxWidth: 440, textAlign: 'center', boxShadow: 'var(--shadow2)' }}>
+          <i className="ti ti-user-plus" style={{ fontSize: 36, color: 'var(--ocean)', marginBottom: 14, display: 'block' }} />
+          <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: 8 }}>Finishing setup...</h2>
+          <p style={{ fontSize: 13, color: 'var(--ink3)', lineHeight: 1.6, marginBottom: 16 }}>
+            {authError ? authError : "We're linking your account to a staff profile. If this doesn't clear in a few seconds, try reloading."}
+          </p>
+          <button onClick={() => window.location.reload()} style={{ padding: '10px 18px', borderRadius: 8, border: 'none', background: 'var(--ocean)', color: 'white', fontSize: 13, cursor: 'pointer' }}>
+            Reload
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -245,7 +283,7 @@ export default function App() {
         </div>
 
         <nav style={{ flex: 1, padding: '14px 10px', overflowY: 'auto' }}>
-          {NAV.map((item, i) => {
+          {NAV.filter(item => !item.managerOnly || isManager).map((item, i) => {
             if (item.section) return (
               <div key={i} style={{ fontSize: 9, color: 'rgba(255,255,255,.22)', letterSpacing: '2.5px', textTransform: 'uppercase', padding: '14px 10px 6px' }}>
                 {item.section}
@@ -277,11 +315,19 @@ export default function App() {
         </nav>
 
         <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: 'white' }}>MW</div>
-          <div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)' }}>Mois Wennekes</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.28)' }}>Member Relations · Bali</div>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: 'white', flexShrink: 0 }}>
+            {staff.avatar_initials || staff.name?.slice(0, 2).toUpperCase()}
           </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{staff.name}</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.28)' }}>{staff.role || 'Member Relations'}{isManager ? ' · Manager' : ''}</div>
+          </div>
+          <i
+            className="ti ti-logout"
+            title="Sign out"
+            onClick={signOut}
+            style={{ fontSize: 15, color: 'rgba(255,255,255,.4)', cursor: 'pointer', flexShrink: 0 }}
+          />
         </div>
       </div>
 
@@ -318,6 +364,7 @@ export default function App() {
             {screen === 'pipeline'   && <PipelineScreen   guests={guests} onNav={setScreen} />}
             {screen === 'import'    && <ImportScreen onImport={(g) => addGuest({ ...g, week_number: currentWeek, week_label: `Week ${currentWeek}` })} />}
             {screen === 'weeks'     && <WeekHistoryScreen currentWeek={currentWeek} onStartNewWeek={(wk) => { setCurrentWeek(wk); setScreen('dashboard') }} />}
+            {screen === 'team' && isManager && <TeamScreen currentStaffId={staff.id} />}
           </ErrorBoundary>
         </div>
       </div>
