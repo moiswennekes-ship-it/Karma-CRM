@@ -20,9 +20,15 @@ export function useGuests() {
       setLoading(true)
       const data = await getGuests()
 
-      // Auto-update status to 'Departed' for guests whose departure date has passed
+      // Auto-update status to 'Departed' for guests whose departure date has
+      // passed, but ONLY if nobody ever worked the lead (still the default
+      // 'Arriving Soon'). Do not clobber a real pipeline stage (Contacted,
+      // Meeting Booked, Hot Lead, Proposal Sent, Follow-Up, Converted) just
+      // because the guest's stay ended — staff may still be following up
+      // after departure, and overwriting silently here with no interaction
+      // log previously destroyed that history.
       const toUpdate = data.filter(g =>
-        hasLeft(g.depart_date) && g.status !== 'Departed' && g.status !== 'Converted'
+        hasLeft(g.depart_date) && g.status === 'Arriving Soon'
       )
       for (const g of toUpdate) {
         await updateGuest(g.id, { status: 'Departed' })
