@@ -1,26 +1,35 @@
 // ── CLAUDE AI SERVICE ─────────────────────────────────────────
-// All AI calls go through this file. In production, route these
-// through a Supabase Edge Function to keep your API key private.
+// All AI calls go through /api/claude (a Vercel function). It checks the
+// user's Supabase login before forwarding, so the API key stays private.
 
+import { supabase } from './supabase'
 
-const CLAUDE_API_URL = '/api/claude';
-const MODEL = 'claude-sonnet-4-5'
+const CLAUDE_API_URL = '/api/claude'
 
-async function callClaude(prompt, maxTokens = 900) {
+// Ground rules every AI answer follows.
+export const GURU_RULES = `You support Mois Wennekes, Member Relations at Karma Kandara, Bali (Karma Group).
+Rules you always follow:
+- Never invent prices, fees, discounts, promotions or financial figures. Only use numbers given to you in this request. If a number is needed and not given, write [confirm with manager] instead.
+- Recommend the best-fit Karma option for the guest, not the most expensive one. If nothing fits, say so.
+- If you don't know something about Karma's products or policies, say "check with your manager" rather than guessing.
+- Write like Mois: friendly, casual, direct and human. Never corporate or pushy.`
+
+export async function callClaude(prompt, maxTokens = 900, system = GURU_RULES) {
+  const { data: { session } } = await supabase.auth.getSession()
   const res = await fetch(CLAUDE_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    },
     body: JSON.stringify({
-      model: MODEL,
+      system,
       max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
+      messages: Array.isArray(prompt) ? prompt : [{ role: 'user', content: prompt }],
     }),
   })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error?.message || 'Claude API error')
-  }
-  const data = await res.json()
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error?.message || 'AI request failed')
   return data.content?.map(c => c.text || '').join('') || ''
 }
 
@@ -133,7 +142,7 @@ ${highlights ? `Key points to highlight: ${highlights}` : ''}
 Include:
 1. Personal opening that references their history with Karma
 2. What changes with ${proposalType}
-3. Estimated 5-year and 10-year cost comparison (use realistic estimates)
+3. How the costs compare over 5 and 10 years: only use figures given in "Key points to highlight". If none are given, describe the comparison in words and mark where figures go as [confirm with manager]
 4. Key benefits: equity, flexibility, exit value, upgraded experiences
 5. Warm close with invitation to discuss further
 
