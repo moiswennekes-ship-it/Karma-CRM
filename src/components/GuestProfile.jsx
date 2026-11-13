@@ -3,6 +3,7 @@ import { Avatar, Btn, FieldSelect, ALL_STATUSES } from './UI'
 import { AskGuru } from './AskGuru'
 import { formatDaysLeft, hasLeft, isLeavingSoon } from '../lib/dates'
 import { nextAction } from '../lib/nextAction'
+import { weekTag } from '../lib/history'
 import { getInteractions, logInteraction } from '../lib/supabase'
 
 const TYPE_ICON = {
@@ -100,6 +101,22 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
           {guest.member_number && <div style={{ fontSize: 11, color: 'var(--ink4)', marginTop: 1 }}>Member #{guest.member_number}</div>}
         </div>
       </div>
+
+      {/* Earlier stays (same member number) */}
+      {guest._past?.length > 0 && (
+        <div style={{ background: guest._stayKind === 'returning' ? '#F0EDFC' : 'var(--ocean-light)', borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: guest._stayKind === 'returning' ? '#5A3DB8' : 'var(--ocean)', marginBottom: 6 }}>
+            <i className={`ti ti-${guest._stayKind === 'returning' ? 'refresh' : 'link'}`} /> {guest._stayKind === 'returning' ? `Returning guest · ${guest._past.length} earlier stay${guest._past.length > 1 ? 's' : ''}` : 'Continuing stay'}
+          </div>
+          {guest._past.slice(0, 4).map(p => (
+            <div key={p.id} style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 5 }}>
+              <div style={{ fontWeight: 500 }}>{weekTag(p)} <span style={{ fontWeight: 400, color: 'var(--ink3)' }}>({p.arrival_date} → {p.depart_date}) · {p.status}{p.outcome === 'lost' ? ' · no deal' : p.outcome === 'won' ? ' · bought' : ''}</span></div>
+              {p.outcome_reason && <div style={{ color: 'var(--ink2)' }}>Why: {p.outcome_reason}</div>}
+              {p.notes && <div style={{ color: 'var(--ink2)' }}>{p.notes}</div>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Next best action */}
       {next && (

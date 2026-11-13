@@ -1,15 +1,25 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { GuestCard } from '../components/GuestCard'
 import { ProfilePanel } from '../components/ProfilePanel'
 import { ALL_STATUSES } from '../components/UI'
 import { hasLeft } from '../lib/dates'
 
 // GUESTS: search and filter everyone, including departed guests.
-export function GuestsScreen({ guests, isMobile, onStatusChange, ...profileProps }) {
+export function GuestsScreen({ guests, isMobile, onStatusChange, focusId, onFocusUsed, ...profileProps }) {
   const [query, setQuery] = useState('')
   const [stage, setStage] = useState('all')
   const [showDeparted, setShowDeparted] = useState(false)
-  const [selectedId, setSelectedId] = useState(null)
+  const [selectedId, setSelectedId] = useState(focusId || null)
+
+  // Opened from Week History: select that guest (and show departed guests).
+  useEffect(() => {
+    if (!focusId) return
+    setSelectedId(focusId)
+    const g = guests.find(x => x.id === focusId)
+    if (g && hasLeft(g.depart_date)) setShowDeparted(true)
+    onFocusUsed && onFocusUsed()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusId])
 
   const q = query.trim().toLowerCase()
   const filtered = guests.filter(g => {

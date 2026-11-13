@@ -1,5 +1,6 @@
 import React from 'react'
 import { Avatar, StatusPill } from './UI'
+import { weekTag } from '../lib/history'
 import { hasLeft, isLeavingSoon, formatDaysLeft } from '../lib/dates'
 
 export function GuestCard({ guest, selected, onClick, onStatusChange }) {
@@ -55,6 +56,8 @@ export function GuestCard({ guest, selected, onClick, onStatusChange }) {
 
         {/* Meta row */}
         <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+          {guest._stayKind === 'returning' && <span style={{ color: '#5A3DB8', fontWeight: 500 }}><i className="ti ti-refresh" /> Returning · last {weekTag(guest._past[0])}</span>}
+          {guest._stayKind === 'continuing' && <span style={{ color: '#1A5F6E', fontWeight: 500 }}><i className="ti ti-link" /> Continuing stay</span>}
           {guest.member_number && <span>#{guest.member_number}</span>}
           {guest.room && <span>· Rm {guest.room}</span>}
           <span>· {guest.arrival_date} → {guest.depart_date}</span>

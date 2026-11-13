@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useGuests } from './hooks/useGuests'
 import { useAuth } from './hooks/useAuth'
 import { useIsMobile } from './hooks/useIsMobile'
 import { supabase } from './lib/supabase'
-import { karmaWeek, karmaWeekRange, parseKarmaDate } from './lib/dates'
+import { karmaWeek, karmaWeekRange, karmaYear, parseKarmaDate } from './lib/dates'
+import { withHistory } from './lib/history'
 import { DashboardScreen } from './screens/Dashboard'
 import { GuestsScreen } from './screens/Guests'
 import { CoachScreen, Tabs } from './screens/Coach'
@@ -37,13 +38,13 @@ const SCREEN_META = {
   team:   { title: 'Team', sub: "Each rep's pipeline" },
 }
 
-function ImportHub({ currentWeek, onImport, onStartNewWeek }) {
+function ImportHub({ currentWeek, currentYear, guests, onImport, onStartNewWeek, onOpenGuest }) {
   const [tab, setTab] = useState('import')
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
       <Tabs active={tab} onChange={setTab} tabs={[['import', 'Import leadsheet', 'ti-table-import'], ['weeks', 'Weeks', 'ti-history']]} />
-      {tab === 'import' && <ImportScreen onImport={onImport} />}
-      {tab === 'weeks' && <WeekHistoryScreen currentWeek={currentWeek} onStartNewWeek={onStartNewWeek} />}
+      {tab === 'import' && <ImportScreen onImport={onImport} guests={guests} />}
+      {tab === 'weeks' && <WeekHistoryScreen currentWeek={currentWeek} currentYear={currentYear} onStartNewWeek={onStartNewWeek} onOpenGuest={onOpenGuest} />}
     </div>
   )
 }
@@ -79,17 +80,21 @@ function CenterCard({ icon, title, children, iconColor = 'var(--ocean)' }) {
 // ── APP ROOT ──────────────────────────────────────────────────
 export default function App() {
   const { session, staff, isManager, loading: authLoading, error: authError, signIn, signUp, signOut } = useAuth()
-  const { guests, loading, error, addGuest, editGuest, updateStatus, removeGuest, reload } = useGuests(staff?.id, staff?.name)
+  const { guests: rawGuests, loading, error, addGuest, editGuest, updateStatus, removeGuest, reload } = useGuests(staff?.id, staff?.name)
+  // Each guest carries their earlier stays (matched on member number).
+  const guests = useMemo(() => withHistory(rawGuests), [rawGuests])
   const isMobile = useIsMobile()
   const [screen, setScreen] = useState('today')
   const [addOpen, setAddOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(karmaWeek())
+  const [currentYear, setCurrentYear] = useState(karmaYear())
+  const [focusGuestId, setFocusGuestId] = useState(null)
   const [editingGuest, setEditingGuest] = useState(null)
 
   // Karma weeks run Saturday to Friday and the number comes from the date,
   // so it flips by itself at midnight on Saturday (Bali time).
   useEffect(() => {
-    const t = setInterval(() => setCurrentWeek(karmaWeek()), 60 * 1000)
+    const t = setInterval(() => { setCurrentWeek(karmaWeek()); setCurrentYear(karmaYear()) }, 60 * 1000)
     return () => clearInterval(t)
   }, [])
 
@@ -99,23 +104,27 @@ export default function App() {
     if (!session) return
     ;(async () => {
       const { data: weeks } = await supabase.from('weeks').select('*')
-      for (const w of (weeks || []).filter(w => w.status === 'active' && w.week_number !== currentWeek)) {
-        const { data: wg } = await supabase.from('guests').select('status').eq('week_number', w.week_number)
+      const isCurrent = w => w.week_number === currentWeek && (w.week_year || currentYear) === currentYear
+      for (const w of (weeks || []).filter(w => w.status === 'active' && !isCurrent(w))) {
+        let gq = supabase.from('guests').select('status').eq('week_number', w.week_number)
+        gq = w.week_year ? gq.eq('week_year', w.week_year) : gq.is('week_year', null)
+        const { data: wg } = await gq
         await supabase.from('weeks').update({
           status: 'archived',
           guest_count: (wg || []).length,
           toured_count: (wg || []).filter(g => ['Toured', 'Follow-Up', 'Hot Lead', 'Converted'].includes(g.status)).length,
           converted_count: (wg || []).filter(g => g.status === 'Converted').length,
-        }).eq('week_number', w.week_number)
+        }).eq('id', w.id)
       }
-      if (!(weeks || []).some(w => w.week_number === currentWeek)) {
+      const cur = (weeks || []).find(isCurrent)
+      if (!cur) {
         const { start, end } = karmaWeekRange()
-        await supabase.from('weeks').insert([{ week_number: currentWeek, week_label: `Week ${currentWeek}`, start_date: start, end_date: end, status: 'active' }])
-      } else {
-        await supabase.from('weeks').update({ status: 'active' }).eq('week_number', currentWeek)
+        await supabase.from('weeks').insert([{ week_number: currentWeek, week_year: currentYear, week_label: `Week ${currentWeek}`, start_date: start, end_date: end, status: 'active' }])
+      } else if (cur.status !== 'active' || !cur.week_year) {
+        await supabase.from('weeks').update({ status: 'active', week_year: currentYear }).eq('id', cur.id)
       }
     })().catch(() => {})
-  }, [session, currentWeek])
+  }, [session, currentWeek, currentYear])
 
   if (authLoading) {
     return (
@@ -225,16 +234,20 @@ export default function App() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', minHeight: 0, paddingBottom: isMobile && !['today', 'guests'].includes(screen) ? 70 : 0 }}>
           <ErrorBoundary key={screen} label={meta.title}>
             {screen === 'today'  && <DashboardScreen guests={guests} isMobile={isMobile} {...profileProps} />}
-            {screen === 'guests' && <GuestsScreen guests={guests} isMobile={isMobile} {...profileProps} />}
+            {screen === 'guests' && <GuestsScreen guests={guests} isMobile={isMobile} focusId={focusGuestId} onFocusUsed={() => setFocusGuestId(null)} {...profileProps} />}
             {screen === 'coach'  && <CoachScreen guests={guests} />}
             {screen === 'import' && (
               <ImportHub
                 currentWeek={currentWeek}
+                currentYear={currentYear}
+                guests={guests}
+                onOpenGuest={(id) => { setFocusGuestId(id); setScreen('guests') }}
                 onImport={(g) => {
                   // File each guest under the Karma week they arrive in, so next
                   // week's leads imported early land in next week.
-                  const wk = karmaWeek(parseKarmaDate(g.arrival_date) || new Date())
-                  return addGuest({ ...g, week_number: wk, week_label: `Week ${wk}` })
+                  const arrives = parseKarmaDate(g.arrival_date) || new Date()
+                  const wk = karmaWeek(arrives)
+                  return addGuest({ ...g, week_number: wk, week_year: karmaYear(arrives), week_label: `Week ${wk}` })
                 }}
                 onStartNewWeek={() => { reload(); setScreen('today') }}
               />

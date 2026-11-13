@@ -117,6 +117,17 @@ export function karmaWeek(date = new Date()) {
   return Math.floor((day - start) / (7 * 86400000)) + 1
 }
 
+// The year a Karma week belongs to (early January before the first
+// Saturday still counts as the previous year's last week).
+export function karmaYear(date = new Date()) {
+  const bali = new Date(date.getTime() + (8 * 60 + date.getTimezoneOffset()) * 60000)
+  const y = bali.getFullYear()
+  const day = Date.UTC(y, bali.getMonth(), bali.getDate())
+  const jan1 = new Date(Date.UTC(y, 0, 1))
+  const firstSat = Date.UTC(y, 0, 1 + ((6 - jan1.getUTCDay() + 7) % 7))
+  return day < firstSat ? y - 1 : y
+}
+
 // Saturday–Friday dates (e.g. "14 Nov 2026") for the Karma week containing `date`.
 export function karmaWeekRange(date = new Date()) {
   const bali = new Date(date.getTime() + (8 * 60 + date.getTimezoneOffset()) * 60000)

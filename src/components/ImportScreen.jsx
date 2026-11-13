@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { pastStaysFor, stayKind, weekTag } from '../lib/history'
 import { Btn, Card, CardHeader, CardBody, SectionHeader } from './UI'
 
 // ── COLUMN MAP (0-based) ──────────────────────────────────────
@@ -216,7 +217,18 @@ const AVATAR_COLORS = [
   { bg: '#F0EDFC', color: '#5A3DB8' },
 ]
 
-export function ImportScreen({ onImport }) {
+// Earlier stays / already-imported check for a guest in the preview.
+function historyTag(g, guests) {
+  if (!g.member_number || !guests?.length) return null
+  const num = String(g.member_number).trim().toLowerCase()
+  const same = guests.filter(x => String(x.member_number || '').trim().toLowerCase() === num)
+  if (same.some(x => x.arrival_date === g.arrival_date)) return { kind: 'dupe' }
+  const past = pastStaysFor({ ...g, id: '__preview', created_at: '9999' }, guests)
+  if (!past.length) return null
+  return { kind: stayKind(g, past), last: past[0] }
+}
+
+export function ImportScreen({ onImport, guests = [] }) {
   const [text, setText] = useState('')
   const [parsed, setParsed] = useState(null)
   const [importing, setImporting] = useState(false)
@@ -337,6 +349,13 @@ export function ImportScreen({ onImport }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 500, fontSize: 13.5, marginBottom: 3 }}>{g.name}</div>
                     <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                      {(() => {
+                        const h = historyTag(g, guests)
+                        if (!h) return null
+                        if (h.kind === 'dupe') return <span style={{ color: 'var(--rose)', fontWeight: 500 }}><i className="ti ti-copy" /> Already imported</span>
+                        if (h.kind === 'continuing') return <span style={{ color: '#1A5F6E', fontWeight: 500 }}><i className="ti ti-link" /> Continuing stay</span>
+                        return <span style={{ color: '#5A3DB8', fontWeight: 500 }}><i className="ti ti-refresh" /> Returning · last {weekTag(h.last)}: {h.last.status}{h.last.outcome === 'lost' ? ', no deal' : ''}</span>
+                      })()}
                       {g.member_number && <span>#{g.member_number}</span>}
                       {g.room && <span>· Rm {g.room}</span>}
                       <span>· {g.member_type}</span>

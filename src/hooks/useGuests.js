@@ -7,7 +7,7 @@ import {
   subscribeToGuests,
   logInteraction,
 } from '../lib/supabase'
-import { hasLeft, isToday } from '../lib/dates'
+import { hasLeft, isToday, parseKarmaDate, karmaWeek, karmaYear } from '../lib/dates'
 
 export function useGuests(assignedTo, staffName) {
   const [guests, setGuests] = useState([])
@@ -69,7 +69,12 @@ export function useGuests(assignedTo, staffName) {
       .slice(0, 2)
       .join('')
 
+    // File under the Karma week (and year) the guest arrives in.
+    const arrives = parseKarmaDate(guestData.arrival_date) || new Date()
     const newGuest = {
+      week_number: karmaWeek(arrives),
+      week_year: karmaYear(arrives),
+      week_label: `Week ${karmaWeek(arrives)}`,
       ...guestData,
       initials,
       status: guestData.status || 'Arriving Soon',
@@ -82,7 +87,9 @@ export function useGuests(assignedTo, staffName) {
   }, [guests.length, assignedTo])
 
   // Update a guest field or fields
-  const editGuest = useCallback(async (id, updates) => {
+  const editGuest = useCallback(async (id, rawUpdates) => {
+    // Drop computed fields (_past, _stayKind) that aren't database columns.
+    const updates = Object.fromEntries(Object.entries(rawUpdates).filter(([k]) => !k.startsWith('_')))
     // Immediately update local state for instant UI
     setGuests(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g))
     // Then persist to database
