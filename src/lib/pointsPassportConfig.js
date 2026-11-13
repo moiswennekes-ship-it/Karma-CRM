@@ -141,25 +141,27 @@ export const DESTINATIONS = [
   { id: 'ye-olde-salutation-inn', name: "Ye Olde Salutation Inn", tier: 'Silver' },
 ]
 
-// Points Membership packages.
+// Points Membership packages. price = 25-year full package (price list
+// effective 13 Dec 2025, non-India).
 export const PACKAGES = [
-  { id: 'pkg-132', name: '132 Points', pts: 132 },
-  { id: 'pkg-165', name: '165 Points', pts: 165 },
-  { id: 'pkg-185', name: '185 Points', pts: 185 },
-  { id: 'pkg-198', name: '198 Points', pts: 198 },
-  { id: 'pkg-231', name: '231 Points', pts: 231 },
-  { id: 'pkg-263', name: '263 Points', pts: 263 },
-  { id: 'pkg-315', name: '315 Points', pts: 315 },
+  { id: 'pkg-132', name: '132 Points', pts: 132, price: 25000 },
+  { id: 'pkg-165', name: '165 Points', pts: 165, price: 30000 },
+  { id: 'pkg-185', name: '185 Points', pts: 185, price: 34000 },
+  { id: 'pkg-198', name: '198 Points', pts: 198, price: 35000 },
+  { id: 'pkg-231', name: '231 Points', pts: 231, price: 36500 },
+  { id: 'pkg-263', name: '263 Points', pts: 263, price: 38000 },
+  { id: 'pkg-315', name: '315 Points', pts: 315, price: 43000 },
 ]
 
-// Fractional ownership shares.
+// Fractional ownership shares (full = 4 weeks, half = 2 weeks), with
+// prices from the 13 Dec 2025 price list.
 export const FRACTIONAL_PACKAGES = [
-  { id: 'frac-studio-half', name: "Studio — Half Share", pts: 301 },
-  { id: 'frac-studio-full', name: "Studio — Full Share", pts: 602 },
-  { id: 'frac-1bed-half', name: "1-Bedroom — Half Share", pts: 371 },
-  { id: 'frac-1bed-full', name: "1-Bedroom — Full Share", pts: 742 },
-  { id: 'frac-2bed-half', name: "2-Bedroom — Half Share", pts: 442 },
-  { id: 'frac-2bed-full', name: "2-Bedroom — Full Share", pts: 882 },
+  { id: 'frac-studio-half', name: "Studio — Half Share", pts: 301, price: 60000 },
+  { id: 'frac-studio-full', name: "Studio — Full Share", pts: 602, price: 85000 },
+  { id: 'frac-1bed-half', name: "1-Bedroom — Half Share", pts: 371, price: 70000 },
+  { id: 'frac-1bed-full', name: "1-Bedroom — Full Share", pts: 742, price: 95000 },
+  { id: 'frac-2bed-half', name: "2-Bedroom — Half Share", pts: 442, price: 80000 },
+  { id: 'frac-2bed-full', name: "2-Bedroom — Full Share", pts: 882, price: 105000 },
 ]
 
 // How many years of points can realistically be banked/accumulated toward a
