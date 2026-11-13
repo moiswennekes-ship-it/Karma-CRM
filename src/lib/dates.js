@@ -100,3 +100,30 @@ export function formatDaysLeft(departStr) {
   if (days === 1) return '1 day left'
   return `${days} days left`
 }
+
+// ── KARMA WEEK NUMBER ─────────────────────────────────────────
+// Karma weeks run Saturday to Friday. Week 1 starts on the first
+// Saturday of the year (e.g. Sat 3 Jan 2026), so Fri 13 Nov 2026 is
+// Week 45 and Sat 14 Nov 2026 starts Week 46. Uses Bali time (UTC+8).
+export function karmaWeek(date = new Date()) {
+  const bali = new Date(date.getTime() + (8 * 60 + date.getTimezoneOffset()) * 60000)
+  const day = Date.UTC(bali.getFullYear(), bali.getMonth(), bali.getDate())
+  const firstSaturday = (year) => {
+    const jan1 = new Date(Date.UTC(year, 0, 1))
+    return Date.UTC(year, 0, 1 + ((6 - jan1.getUTCDay() + 7) % 7))
+  }
+  let start = firstSaturday(bali.getFullYear())
+  if (day < start) start = firstSaturday(bali.getFullYear() - 1)
+  return Math.floor((day - start) / (7 * 86400000)) + 1
+}
+
+// Saturday–Friday dates (e.g. "14 Nov 2026") for the Karma week containing `date`.
+export function karmaWeekRange(date = new Date()) {
+  const bali = new Date(date.getTime() + (8 * 60 + date.getTimezoneOffset()) * 60000)
+  const day = Date.UTC(bali.getFullYear(), bali.getMonth(), bali.getDate())
+  const sinceSat = (new Date(day).getUTCDay() + 1) % 7   // Sat=0 … Fri=6
+  const start = new Date(day - sinceSat * 86400000)
+  const end = new Date(start.getTime() + 6 * 86400000)
+  const fmt = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+  return { start: fmt(start), end: fmt(end) }
+}
