@@ -211,7 +211,7 @@ export function ComparisonScreen() {
         Compare total cost of current membership fees vs fractional ownership to contract end date.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+      <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
         <Card>
           <CardHeader title="Current Membership" />
           <CardBody>
@@ -248,7 +248,7 @@ export function ComparisonScreen() {
       <Card style={{ marginBottom: 14 }}>
         <CardHeader title={`Comparison to ${endYear} (${years} years)`} />
         <CardBody>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+          <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             {[
               { label: 'Current membership', rows: [
                 ['Total fees paid', fmt(cTotal), false],
@@ -339,7 +339,7 @@ export function AIToolsScreen({ guests }) {
       } />
 
       {!activeTool && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {AI_TOOLS.map(t => (
             <div key={t.id} onClick={() => setActiveTool(t.id)} style={{
               background: 'white', borderRadius: 14, border: '1px solid var(--border)',
