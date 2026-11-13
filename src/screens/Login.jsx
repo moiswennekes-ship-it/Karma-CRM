@@ -14,8 +14,10 @@ const inputStyle = {
   boxSizing: 'border-box',
 }
 
-export function LoginScreen({ onSignIn, onSignUp }) {
-  const [mode, setMode] = useState('signin') // 'signin' | 'signup'
+export function LoginScreen({ onSignIn, onSignUp, onReset, onUpdatePassword, recovery }) {
+  const [mode, setMode] = useState('signin') // 'signin' | 'signup' | 'forgot'
+  const [resetSent, setResetSent] = useState(false)
+  const [confirm, setConfirm] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,7 +30,13 @@ export function LoginScreen({ onSignIn, onSignUp }) {
     setError(null)
     setBusy(true)
     try {
-      if (mode === 'signin') {
+      if (recovery) {
+        if (password !== confirm) throw new Error("The two passwords don't match.")
+        await onUpdatePassword(password)
+      } else if (mode === 'forgot') {
+        await onReset(email.trim())
+        setResetSent(true)
+      } else if (mode === 'signin') {
         await onSignIn(email.trim(), password)
       } else {
         await onSignUp(email.trim(), password, name.trim())
@@ -55,7 +63,45 @@ export function LoginScreen({ onSignIn, onSignUp }) {
           <div style={{ fontSize: 10, color: 'var(--ink3)', letterSpacing: '2.5px', textTransform: 'uppercase' }}>Member Relations</div>
         </div>
 
-        {signedUp ? (
+        {recovery ? (
+          <form onSubmit={handleSubmit}>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Set a new password</div>
+            <p style={{ fontSize: 12.5, color: 'var(--ink3)', marginTop: 0, marginBottom: 14 }}>Choose a new password for your account.</p>
+            <input type="password" placeholder="New password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} minLength={6} required />
+            <input type="password" placeholder="Type it again" value={confirm} onChange={e => setConfirm(e.target.value)} style={inputStyle} minLength={6} required />
+            {error && <div style={{ background: 'var(--rose-light)', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 12, color: 'var(--rose)' }}>{error}</div>}
+            <button type="submit" disabled={busy} style={{ ...inputStyle, marginBottom: 0, background: 'var(--ocean)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+              {busy ? 'Saving...' : 'Save new password'}
+            </button>
+          </form>
+        ) : mode === 'forgot' ? (
+          resetSent ? (
+            <div style={{ textAlign: 'center' }}>
+              <i className="ti ti-mail-forward" style={{ fontSize: 36, color: 'var(--ocean)', display: 'block', marginBottom: 12 }} />
+              <p style={{ fontSize: 13, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 16 }}>
+                If there's an account for <strong>{email}</strong>, a reset link is on its way. Open it on this device to pick a new password.
+              </p>
+              <button type="button" onClick={() => { setMode('signin'); setResetSent(false); setError(null) }}
+                style={{ ...inputStyle, marginBottom: 0, background: 'var(--ocean)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Forgot your password?</div>
+              <p style={{ fontSize: 12.5, color: 'var(--ink3)', marginTop: 0, marginBottom: 14 }}>Enter your work email and we'll send you a link to set a new one.</p>
+              <input type="email" placeholder="you@karmagroup.com" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} required />
+              {error && <div style={{ background: 'var(--rose-light)', borderRadius: 8, padding: '10px 12px', marginBottom: 14, fontSize: 12, color: 'var(--rose)' }}>{error}</div>}
+              <button type="submit" disabled={busy} style={{ ...inputStyle, marginBottom: 10, background: 'var(--ocean)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                {busy ? 'Sending...' : 'Send reset link'}
+              </button>
+              <button type="button" onClick={() => { setMode('signin'); setError(null) }}
+                style={{ background: 'none', border: 'none', color: 'var(--ocean)', fontSize: 12.5, cursor: 'pointer', width: '100%', fontFamily: 'var(--font-body)' }}>
+                Back to sign in
+              </button>
+            </form>
+          )
+        ) : signedUp ? (
           <div style={{ textAlign: 'center' }}>
             <i className="ti ti-mail-check" style={{ fontSize: 36, color: 'var(--palm)', display: 'block', marginBottom: 12 }} />
             <p style={{ fontSize: 13, color: 'var(--ink2)', lineHeight: 1.6, marginBottom: 16 }}>
@@ -103,7 +149,7 @@ export function LoginScreen({ onSignIn, onSignUp }) {
               )}
               <input
                 type="email"
-                placeholder="you@karma.com"
+                placeholder="you@karmagroup.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 style={inputStyle}
@@ -121,7 +167,7 @@ export function LoginScreen({ onSignIn, onSignUp }) {
 
               {mode === 'signup' && (
                 <p style={{ fontSize: 11, color: 'var(--ink3)', marginTop: -6, marginBottom: 14, lineHeight: 1.5 }}>
-                  Only @karma.com email addresses can create an account.
+                  Only @karmagroup.com email addresses can create an account.
                 </p>
               )}
 
@@ -143,6 +189,12 @@ export function LoginScreen({ onSignIn, onSignUp }) {
               >
                 {busy ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
               </button>
+              {mode === 'signin' && onReset && (
+                <button type="button" onClick={() => { setMode('forgot'); setError(null) }}
+                  style={{ background: 'none', border: 'none', color: 'var(--ocean)', fontSize: 12.5, cursor: 'pointer', width: '100%', marginTop: 12, fontFamily: 'var(--font-body)' }}>
+                  Forgot password?
+                </button>
+              )}
             </form>
           </>
         )}

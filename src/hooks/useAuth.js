@@ -8,6 +8,8 @@ import { supabase } from '../lib/supabase'
 export function useAuth() {
   const [session, setSession] = useState(null)
   const [staff, setStaff] = useState(null)
+  // True after opening a password-reset link: show 'set a new password'
+  const [recovery, setRecovery] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -38,7 +40,8 @@ export function useAuth() {
       if (active) setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
       setSession(session)
       loadStaff(session)
     })
@@ -63,6 +66,18 @@ export function useAuth() {
     if (error) throw error
   }, [])
 
+  // Email a reset link that brings them back here to pick a new password
+  const resetPassword = useCallback(async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+    if (error) throw error
+  }, [])
+
+  const updatePassword = useCallback(async (password) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw error
+    setRecovery(false)
+  }, [])
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
   }, [])
@@ -76,5 +91,8 @@ export function useAuth() {
     signUp,
     signIn,
     signOut,
+    recovery,
+    resetPassword,
+    updatePassword,
   }
 }

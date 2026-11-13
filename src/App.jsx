@@ -92,7 +92,7 @@ function CenterCard({ icon, title, children, iconColor = 'var(--ocean)' }) {
 
 // ── APP ROOT ──────────────────────────────────────────────────
 export default function App() {
-  const { session, staff, isManager, loading: authLoading, error: authError, signIn, signUp, signOut } = useAuth()
+  const { session, staff, isManager, loading: authLoading, error: authError, signIn, signUp, signOut, recovery, resetPassword, updatePassword } = useAuth()
   const { guests: rawGuests, loading, error, addGuest, editGuest, updateStatus, removeGuest, reload } = useGuests(staff?.id, staff?.name)
   // Each guest carries their earlier stays (matched on member number).
   const guests = useMemo(() => withHistory(rawGuests), [rawGuests])
@@ -154,7 +154,7 @@ export default function App() {
       </div>
     )
   }
-  if (!session) return <LoginScreen onSignIn={signIn} onSignUp={signUp} />
+  if (!session || recovery) return <LoginScreen onSignIn={signIn} onSignUp={signUp} onReset={resetPassword} onUpdatePassword={updatePassword} recovery={recovery} />
   if (!staff) {
     return (
       <CenterCard icon="ti-user-plus" title="Finishing setup...">
