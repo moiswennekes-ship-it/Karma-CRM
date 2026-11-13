@@ -3,7 +3,7 @@
 // used to rank the Today list. Rule-based so it's instant and free;
 // Ask Guru gives the deeper, AI-written version on the guest profile.
 
-import { daysUntilDeparture, hasLeft, isInHouse, isToday, parseKarmaDate } from './dates'
+import { daysUntilDeparture, hasLeft, isInHouse, isToday, parseKarmaDate, tourDayKey, baliTodayKey, tourLabel, tourTime } from './dates'
 
 export function isClosed(g) {
   return g.status === 'Converted' || g.status === 'Departed' || g.outcome === 'lost' || hasLeft(g.depart_date)
@@ -64,11 +64,13 @@ export function nextAction(g) {
       action = urgent ? 'Close it: book a final sit-down today' : 'Book the meeting and agree a decision date'
       reason = `Hot lead, ${left}`
       break
-    case 'Tour Booked':
-      score = urgent ? 88 : 72
-      action = 'Prep the tour: ask Guru for a briefing'
-      reason = later ? `Tour booked. ${arrivalText}` : `Tour booked, ${left}`
+    case 'Tour Booked': {
+      const tourToday = g.tour_at && tourDayKey(g.tour_at) === baliTodayKey()
+      score = tourToday ? 95 : urgent ? 88 : 72
+      action = tourToday ? `Tour today at ${tourTime(g.tour_at)}: prep with Guru` : 'Prep the tour: ask Guru for a briefing'
+      reason = g.tour_at ? `Tour ${tourLabel(g.tour_at)}${left && !later ? `, ${left}` : ''}` : later ? `Tour booked. ${arrivalText}` : `Tour booked, ${left}`
       break
+    }
     case 'Toured':
       score = urgent ? 90 : 75
       action = urgent ? 'Follow up on the tour before they leave' : 'Follow up on the tour'

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Avatar, Btn, FieldSelect, ALL_STATUSES } from './UI'
 import { AskGuru } from './AskGuru'
-import { formatDaysLeft, hasLeft, isLeavingSoon } from '../lib/dates'
+import { formatDaysLeft, hasLeft, isLeavingSoon, tourLabel } from '../lib/dates'
 import { nextAction } from '../lib/nextAction'
 import { weekTag } from '../lib/history'
 import { getInteractions, logInteraction } from '../lib/supabase'
@@ -117,6 +117,13 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
               {p.notes && <div style={{ color: 'var(--ink2)' }}>{p.notes}</div>}
             </div>
           ))}
+        </div>
+      )}
+
+      {guest.tour_at && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F0EDFC', color: '#5A3DB8', borderRadius: 10, padding: '9px 12px', marginBottom: 14, fontSize: 13, fontWeight: 500 }}>
+          <i className="ti ti-calendar-event" /> Tour {tourLabel(guest.tour_at)}
+          <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink3)', marginLeft: 'auto' }}>change it in Calendar</span>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { stayKey, to24h, tourIso } from '../lib/dates'
 import { pastStaysFor, stayKind, weekTag } from '../lib/history'
 import { Btn, Card, CardHeader, CardBody, SectionHeader } from './UI'
 
@@ -194,6 +195,8 @@ function parseLeadsheet(text) {
       color_index: i % 5,
       tags: [],
       booking_numbers: g.bookingNumbers.join(', '),
+      // Appointment on the leadsheet becomes the tour on the calendar
+      tour_at: (g.apptDate && stayKey(g.apptDate) && to24h(g.apptTime)) ? tourIso(stayKey(g.apptDate), to24h(g.apptTime)) : null,
     }
   })
 }

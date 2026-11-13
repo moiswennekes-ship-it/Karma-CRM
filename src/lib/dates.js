@@ -138,3 +138,61 @@ export function karmaWeekRange(date = new Date()) {
   const fmt = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
   return { start: fmt(start), end: fmt(end) }
 }
+
+// ── CALENDAR / TOUR HELPERS (Bali time) ───────────────────────
+// Day keys are 'YYYY-MM-DD' strings so comparisons don't depend on the
+// device's timezone.
+const BALI_TZ = 'Asia/Makassar'
+const pad = n => String(n).padStart(2, '0')
+
+export function baliTodayKey(now = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: BALI_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+}
+
+// Leadsheet date ("14 Nov 26") → '2026-11-14'
+export function stayKey(dateStr) {
+  const d = parseKarmaDate(dateStr)
+  return d ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` : null
+}
+
+export function addDaysKey(key, n) {
+  const [y, m, d] = key.split('-').map(Number)
+  const t = new Date(Date.UTC(y, m - 1, d + n, 12))
+  return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`
+}
+
+// Saturday that starts the Karma week containing `key`
+export function weekStartKey(key) {
+  const [y, m, d] = key.split('-').map(Number)
+  const dow = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay()   // Sun=0 … Sat=6
+  return addDaysKey(key, -((dow + 1) % 7))
+}
+
+export function keyLabel(key, opts = { weekday: 'short', day: 'numeric', month: 'short' }) {
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString('en-GB', { ...opts, timeZone: 'UTC' })
+}
+
+// Tour timestamp → Bali day key and 'HH:MM'
+export function tourDayKey(iso) { return iso ? baliTodayKey(new Date(iso)) : null }
+export function tourTime(iso) {
+  return iso ? new Intl.DateTimeFormat('en-GB', { timeZone: BALI_TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)) : ''
+}
+export function tourLabel(iso) {
+  return iso ? `${keyLabel(tourDayKey(iso))}, ${tourTime(iso)}` : ''
+}
+// '2026-11-17' + '10:00' → ISO timestamp in Bali time
+export function tourIso(dayKey, time) {
+  return dayKey && time ? `${dayKey}T${time}:00+08:00` : null
+}
+
+// "2:00 PM" / "14:00" → "14:00"
+export function to24h(t) {
+  const m = String(t || '').trim().match(/^(\d{1,2})[:.](\d{2})\s*([ap]\.?m\.?)?$/i)
+  if (!m) return null
+  let h = Number(m[1])
+  const ap = (m[3] || '').toLowerCase()
+  if (ap.startsWith('p') && h < 12) h += 12
+  if (ap.startsWith('a') && h === 12) h = 0
+  return h < 24 ? `${pad(h)}:${m[2]}` : null
+}

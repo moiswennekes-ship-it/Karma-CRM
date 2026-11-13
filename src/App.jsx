@@ -7,6 +7,7 @@ import { karmaWeek, karmaWeekRange, karmaYear, parseKarmaDate } from './lib/date
 import { withHistory } from './lib/history'
 import { DashboardScreen } from './screens/Dashboard'
 import { GuestsScreen } from './screens/Guests'
+import { CalendarScreen } from './screens/Calendar'
 import { CoachScreen, Tabs } from './screens/Coach'
 import { CalculatorScreen, ComparisonScreen } from './screens/Tools'
 import { PointsPassportScreen } from './screens/PointsPassport'
@@ -23,6 +24,7 @@ import { TeamScreen } from './screens/Team'
 const NAV = [
   { id: 'today',  icon: 'ti-sun',            label: 'Today' },
   { id: 'guests', icon: 'ti-users',          label: 'Guests' },
+  { id: 'calendar', icon: 'ti-calendar',     label: 'Calendar' },
   { id: 'coach',  icon: 'ti-sparkles',       label: 'Ask Guru' },
   { id: 'import', icon: 'ti-table-import',   label: 'Import' },
   { id: 'tools',  icon: 'ti-calculator',     label: 'Tools' },
@@ -32,6 +34,7 @@ const NAV = [
 const SCREEN_META = {
   today:  { title: 'Today', sub: 'Who to work next, and why' },
   guests: { title: 'Guests', sub: 'Search everyone, open a guest file' },
+  calendar: { title: 'Calendar', sub: 'Check-ins, check-outs and tours' },
   coach:  { title: 'Ask Guru', sub: 'Your AI sales coach, messages, objections and the Karma Brain' },
   import: { title: 'Import & weeks', sub: 'Paste the weekly leadsheet, manage weeks' },
   tools:  { title: 'Tools', sub: 'Points Passport, fee projections, fractional comparison' },
@@ -235,6 +238,7 @@ export default function App() {
           <ErrorBoundary key={screen} label={meta.title}>
             {screen === 'today'  && <DashboardScreen guests={guests} isMobile={isMobile} {...profileProps} />}
             {screen === 'guests' && <GuestsScreen guests={guests} isMobile={isMobile} focusId={focusGuestId} onFocusUsed={() => setFocusGuestId(null)} {...profileProps} />}
+            {screen === 'calendar' && <CalendarScreen guests={guests} isMobile={isMobile} onEditGuest={editGuest} staffName={staff?.name} onOpenGuest={(id) => { setFocusGuestId(id); setScreen('guests') }} />}
             {screen === 'coach'  && <CoachScreen guests={guests} />}
             {screen === 'import' && (
               <ImportHub

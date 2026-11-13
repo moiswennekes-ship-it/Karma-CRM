@@ -4,7 +4,7 @@ import { callClaude, GURU_RULES } from '../lib/claude'
 import { loadBrain, brainContext, saveLesson, clearBrainCache } from '../lib/brain'
 import { saveAIMessage } from '../lib/supabase'
 import { pastStayLine } from '../lib/history'
-import { daysUntilDeparture, parseKarmaDate } from '../lib/dates'
+import { daysUntilDeparture, parseKarmaDate, tourLabel } from '../lib/dates'
 
 // Light formatting for Guru's answers: **bold**, > quotes, bullets, headings.
 function inline(text) {
@@ -55,7 +55,7 @@ Name: ${guest.name}
 Member type: ${guest.member_type || '—'} | Membership: ${guest.membership || '—'}${guest.member_number ? ` | Member #${guest.member_number}` : ''}
 Stay: ${guest.arrival_date || '?'} → ${guest.depart_date || '?'}${guest.nights ? `, ${guest.nights} nights` : ''} (${stayStatus})
 Room: ${guest.room || '—'} | Nationality: ${guest.nationality || '—'} | Linked stay: ${guest.linked_stay || 'no'}
-Pipeline stage: ${guest.status}${guest.outcome ? ` | Outcome: ${guest.outcome}${guest.outcome_reason ? ` (${guest.outcome_reason})` : ''}` : ''}
+Pipeline stage: ${guest.status}${guest.tour_at ? ` | Tour booked: ${tourLabel(guest.tour_at)}` : ''}${guest.outcome ? ` | Outcome: ${guest.outcome}${guest.outcome_reason ? ` (${guest.outcome_reason})` : ''}` : ''}
 Key notes: ${guest.notes || '—'}
 ${guest._past?.length ? `EARLIER STAYS (same member number; ${guest._stayKind === 'continuing' ? 'this booking CONTINUES the stay below, they are already here' : 'RETURNING guest, they have been here before: use this history, never treat them as a first-timer'}):
 ${guest._past.slice(0, 5).map(p => '- ' + pastStayLine(p)).join('\n')}
