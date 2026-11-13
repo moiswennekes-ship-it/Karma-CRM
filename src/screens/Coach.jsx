@@ -65,6 +65,8 @@ export function BrainScreen() {
   const [lesson, setLesson] = useState({ kind: 'lesson', content: '' })
   const [error, setError] = useState(null)
   const [loaded, setLoaded] = useState(false)
+  const [openCats, setOpenCats] = useState({})
+  const [formError, setFormError] = useState(null)
 
   async function load() {
     try {
@@ -82,8 +84,10 @@ export function BrainScreen() {
     try {
       const p = { ...editing, effective_date: editing.effective_date || null }
       await saveProduct(p)
-      clearBrainCache(); setEditing(null); load()
-    } catch (e) { setError(e.message) }
+      clearBrainCache(); setEditing(null); setFormError(null)
+      setOpenCats(c => ({ ...c, [p.category || 'Other']: true }))
+      load()
+    } catch (e) { setFormError(e.message) }
   }
   async function remove(p) {
     if (!window.confirm(`Remove ${p.name} from the Brain?`)) return
@@ -106,16 +110,22 @@ export function BrainScreen() {
       {error && <div style={{ background: 'var(--rose-light)', color: 'var(--rose)', borderRadius: 8, padding: '10px 12px', fontSize: 12 }}>{error}</div>}
 
       <Card>
-        <CardHeader title="Products & prices" right={<Btn size="sm" onClick={() => setEditing({ ...EMPTY_PRODUCT })}><i className="ti ti-plus" /> Add</Btn>} />
+        <CardHeader title="Products & prices" right={<Btn size="sm" onClick={() => { setFormError(null); setEditing({ ...EMPTY_PRODUCT }) }}><i className="ti ti-plus" /> Add</Btn>} />
         <CardBody>
           <p style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 0 }}>
             Guru may only quote what's here. Keep prices current, set the date they apply from, and tick "verify" until you've checked a price against the official sheet.
           </p>
           {loaded && products.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink4)' }}>No products yet. Until you add some, Guru won't quote any prices.</div>}
           {grouped.map(([cat, list]) => (
-            <div key={cat} style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--ink3)', margin: '8px 0 6px' }}>{cat}</div>
-              {list.map(p => (
+            <div key={cat} style={{ marginBottom: 6 }}>
+              <button onClick={() => setOpenCats(c => ({ ...c, [cat]: !c[cat] }))} style={{
+                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--sand)',
+                border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)',
+              }}>
+                <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--ink2)', fontWeight: 500 }}>{cat} <span style={{ color: 'var(--ink4)', fontWeight: 400 }}>· {list.length}</span></span>
+                <i className={`ti ti-chevron-${openCats[cat] ? 'up' : 'down'}`} style={{ color: 'var(--ink3)' }} />
+              </button>
+              {openCats[cat] && list.map(p => (
                 <div key={p.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderTop: '1px solid var(--border)', opacity: p.active === false ? .5 : 1 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>
@@ -127,7 +137,7 @@ export function BrainScreen() {
                     {p.summary && <div style={{ fontSize: 11.5, color: 'var(--ink3)' }}>{p.summary}</div>}
                     <div style={{ fontSize: 10.5, color: 'var(--ink4)' }}>{p.source_tier}{p.effective_date ? ` · from ${p.effective_date}` : ''}</div>
                   </div>
-                  <Btn variant="ghost" size="sm" onClick={() => setEditing({ ...EMPTY_PRODUCT, ...p, effective_date: p.effective_date || '' })}><i className="ti ti-pencil" /></Btn>
+                  <Btn variant="ghost" size="sm" onClick={() => { setFormError(null); setEditing({ ...EMPTY_PRODUCT, ...p, effective_date: p.effective_date || '' }) }}><i className="ti ti-pencil" /></Btn>
                   <Btn variant="danger" size="sm" onClick={() => remove(p)}><i className="ti ti-trash" /></Btn>
                 </div>
               ))}
@@ -137,8 +147,12 @@ export function BrainScreen() {
       </Card>
 
       {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(24,24,26,.45)', zIndex: 300, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '24px 12px' }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560 }}>
         <Card>
-          <CardHeader title={editing.id ? `Edit ${editing.name}` : 'New product'} />
+          <CardHeader title={editing.id ? `Edit ${editing.name}` : 'Add to the Brain'} right={
+            <button onClick={() => setEditing(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink3)', fontSize: 18 }}><i className="ti ti-x" /></button>
+          } />
           <CardBody>
             <FieldLabel>Name</FieldLabel>
             <FieldInput value={editing.name} onChange={v => setEditing({ ...editing, name: v })} placeholder="e.g. Points Membership 198 (10-year)" />
@@ -160,12 +174,16 @@ export function BrainScreen() {
             <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, marginBottom: 12 }}>
               <input type="checkbox" checked={editing.active !== false} onChange={e => setEditing({ ...editing, active: e.target.checked })} /> Currently on sale
             </label>
+            {formError && <div style={{ background: 'var(--rose-light)', color: 'var(--rose)', borderRadius: 8, padding: '8px 10px', fontSize: 12, marginBottom: 10 }}>Couldn't save: {formError}</div>}
             <div style={{ display: 'flex', gap: 8 }}>
               <Btn onClick={save} disabled={!editing.name.trim()}>Save</Btn>
               <Btn variant="ghost" onClick={() => setEditing(null)}>Cancel</Btn>
             </div>
+            {!editing.name.trim() && <div style={{ fontSize: 11, color: 'var(--ink4)', marginTop: 6 }}>Give it a name to save.</div>}
           </CardBody>
         </Card>
+        </div>
+        </div>
       )}
 
       <Card>
