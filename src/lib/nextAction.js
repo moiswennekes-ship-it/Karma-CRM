@@ -15,8 +15,10 @@ function isSecondWeek(g) {
 }
 
 // Open contract or already bought on this trip: not to be pitched.
+// An open deal on the member's OTHER account doesn't block this one.
 function isOpenContract(g) {
-  return /open\s+(deal|contract)/i.test(g.notes || '')
+  const n = g.notes || ''
+  return /open\s+(deal|contract)/i.test(n) && !/(another|other|second)\s+(account|membership|member\s*(number|#|no))/i.test(n)
 }
 
 function arrivesLater(g) {

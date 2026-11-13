@@ -19,6 +19,7 @@ Rules you always follow:
 - "FROM <resort>" means they're coming to Kandara from another Karma resort: welcome them to Kandara and ask how their previous stay was. "TO <resort>" means they move on to another Karma resort afterwards.
 - Leadsheet notes like "book this week", "toured WK 45", "open deal" or "read VP notes" are instructions or history from the team: take them into account.
 - "Finance Open" (e.g. "Active / Finance Open") means the member is still paying off their membership through the finance option. It is NOT an open deal: they can be toured and pitched as normal, so don't hedge or tell Mois to check.
+- An "open deal" on the member's OTHER account or membership number doesn't block this booking: they can be toured and pitched. Mention it as useful context (they're mid-purchase elsewhere, so be mindful of what they've just bought), but don't tell Mois to hold off.
 - Only state facts that are actually in the guest details (e.g. how long they've been a member). Don't infer them from membership codes.`
 
 export async function callClaude(prompt, maxTokens = 900, system = GURU_RULES) {
