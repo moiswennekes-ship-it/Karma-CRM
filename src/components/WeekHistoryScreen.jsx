@@ -21,7 +21,7 @@ function WeeklyReview({ weekNumber, weekYear }) {
         const a = (acts || []).filter(x => x.guest_id === g.id && x.type !== 'status_change').map(x => x.content).slice(-4).join(' | ')
         return `- ${g.name} (${g.member_type || '?'}, ${g.membership || '?'}): stage ${g.status}${g.outcome ? `, outcome ${g.outcome}${g.outcome_reason ? ` (${g.outcome_reason})` : ''}` : ''}${a ? `. Notes: ${a}` : ''}`
       }).join('\n')
-      const prompt = `Review Week ${weekNumber} for Mois. Guests this week:\n${lines || '- none'}\n\nWrite a short weekly review:\n1. The numbers in one line (guests, meetings, conversions, no-deals).\n2. What worked, with the guest names it worked on.\n3. Why deals were lost, and any pattern across them.\n4. Two specific things to do differently next week.\n5. Any guest still worth a follow-up after their stay.\nPlain text, under 250 words. Be honest, not cheerleading.`
+      const prompt = `Review Week ${weekNumber} for Mois. Guests this week:\n${lines || '- none'}\n\nWrite a short weekly review:\n1. The numbers in one line (guests, meetings, conversions, no-deals).\n2. What worked, with the guest names it worked on.\n3. Why deals were lost, and any pattern across them.\n4. Two specific things to do differently next week.\n5. One thing to carry into next week (no contact with departed guests: company rules don't allow follow-up after check-out).\nPlain text, under 250 words. Be honest, not cheerleading.`
       setText(await callClaude(prompt, 900))
     } catch (e) {
       setText('Could not write the review: ' + e.message)
