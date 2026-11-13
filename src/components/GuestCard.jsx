@@ -82,6 +82,12 @@ export function GuestCard({ guest, selected, onClick, onStatusChange }) {
       {/* Right side */}
       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
         <StatusPill status={guest.status} />
+        {guest.outcome && (
+          <span style={{ fontSize: 10.5, fontWeight: 500, borderRadius: 20, padding: '2px 9px',
+            background: guest.outcome === 'won' ? 'var(--palm-light)' : '#F0EFEA', color: guest.outcome === 'won' ? 'var(--palm)' : '#8A8A8E' }}>
+            {guest.outcome === 'won' ? 'Won' : 'No deal'}
+          </span>
+        )}
 
         {/* Quick actions */}
         {!departed && onStatusChange && (

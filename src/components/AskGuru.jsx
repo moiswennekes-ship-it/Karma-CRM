@@ -3,7 +3,26 @@ import { Btn } from './UI'
 import { callClaude, GURU_RULES } from '../lib/claude'
 import { loadBrain, brainContext, saveLesson, clearBrainCache } from '../lib/brain'
 import { saveAIMessage } from '../lib/supabase'
-import { daysUntilDeparture } from '../lib/dates'
+import { daysUntilDeparture, parseKarmaDate } from '../lib/dates'
+
+// Light formatting for Guru's answers: **bold**, > quotes, bullets, headings.
+function inline(text) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') ? <strong key={i}>{part.slice(2, -2)}</strong> : part
+  )
+}
+export function FormattedText({ text }) {
+  const lines = (text || '').split('\n')
+  return lines.map((raw, i) => {
+    const line = raw.trimEnd()
+    if (!line.trim()) return <div key={i} style={{ height: 6 }} />
+    if (/^#{1,4}\s/.test(line)) return <div key={i} style={{ fontWeight: 600, marginTop: 4 }}>{inline(line.replace(/^#{1,4}\s/, ''))}</div>
+    if (/^>\s?/.test(line)) return <div key={i} style={{ borderLeft: '3px solid var(--ocean2)', background: 'var(--ocean-light)', padding: '4px 8px', margin: '2px 0', borderRadius: 4 }}>{inline(line.replace(/^>\s?/, ''))}</div>
+    if (/^\s*[-*•]\s/.test(line)) return <div key={i} style={{ display: 'flex', gap: 6, paddingLeft: 4 }}><span>•</span><span>{inline(line.replace(/^\s*[-*•]\s/, ''))}</span></div>
+    if (/^\s*\d+\.\s/.test(line)) return <div key={i} style={{ paddingLeft: 4 }}>{inline(line.trim())}</div>
+    return <div key={i}>{inline(line)}</div>
+  })
+}
 
 const GUEST_CHIPS = [
   "What's my next move with this guest?",
@@ -21,13 +40,19 @@ const GENERAL_CHIPS = [
 export function guestContext(guest, activity = []) {
   if (!guest) return ''
   const days = daysUntilDeparture(guest.depart_date)
+  const arr = parseKarmaDate(guest.arrival_date)
+  const today = new Date(); today.setHours(23, 59, 59, 0)
+  const toArrival = arr ? Math.round((new Date(arr).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null
+  const stayStatus = arr && arr > today
+    ? `NOT ARRIVED YET: arrives in ${toArrival} day${toArrival === 1 ? '' : 's'}`
+    : days !== null && days >= 0 ? `IN HOUSE: ${days} day${days === 1 ? '' : 's'} until departure` : 'departed'
   const recent = activity.slice(0, 12).map(a =>
     `- ${new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} (${a.type}): ${a.content}`
   ).join('\n')
   return `GUEST YOU'RE ADVISING ON:
 Name: ${guest.name}
 Member type: ${guest.member_type || '—'} | Membership: ${guest.membership || '—'}${guest.member_number ? ` | Member #${guest.member_number}` : ''}
-Stay: ${guest.arrival_date || '?'} → ${guest.depart_date || '?'}${days !== null ? ` (${days} days left)` : ''}${guest.nights ? `, ${guest.nights} nights` : ''}
+Stay: ${guest.arrival_date || '?'} → ${guest.depart_date || '?'}${guest.nights ? `, ${guest.nights} nights` : ''} (${stayStatus})
 Room: ${guest.room || '—'} | Nationality: ${guest.nationality || '—'} | Linked stay: ${guest.linked_stay || 'no'}
 Pipeline stage: ${guest.status}${guest.outcome ? ` | Outcome: ${guest.outcome}${guest.outcome_reason ? ` (${guest.outcome_reason})` : ''}` : ''}
 Key notes: ${guest.notes || '—'}
@@ -123,9 +148,10 @@ export function AskGuru({ guest, activity = [], extraContext = '', compact = fal
             <div style={{
               background: m.role === 'user' ? 'var(--ocean)' : 'white',
               color: m.role === 'user' ? 'white' : 'var(--ink2)',
-              borderRadius: 10, padding: '9px 12px', fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap',
+              borderRadius: 10, padding: '9px 12px', fontSize: 12.5, lineHeight: 1.6,
               border: m.role === 'user' ? 'none' : '1px solid var(--border)',
-            }}>{m.content}</div>
+              whiteSpace: m.role === 'user' ? 'pre-wrap' : 'normal',
+            }}>{m.role === 'user' ? m.content : <FormattedText text={m.content} />}</div>
             {m.role === 'assistant' && (
               <div style={{ display: 'flex', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
                 <Btn variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(m.content).catch(() => {})}>

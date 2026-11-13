@@ -9,8 +9,16 @@ export function isClosed(g) {
   return g.status === 'Converted' || g.status === 'Departed' || g.outcome === 'lost' || hasLeft(g.depart_date)
 }
 
+// "2nd weeks", "3rd weeks" etc: the guest is continuing a stay with us.
 function isSecondWeek(g) {
-  return (g.linked_stay || '').toLowerCase().includes('2nd')
+  return /\b\d+(st|nd|rd|th)\b/i.test(g.linked_stay || '')
+}
+
+function arrivesLater(g) {
+  const arr = parseKarmaDate(g.arrival_date)
+  if (!arr) return false
+  const today = new Date(); today.setHours(23, 59, 59, 0)
+  return arr > today
 }
 
 export function nextAction(g) {
@@ -22,6 +30,23 @@ export function nextAction(g) {
   const inHouse = isInHouse(g.arrival_date, g.depart_date)
 
   let score = 0, action = '', reason = ''
+  const notes = (g.notes || '').toLowerCase()
+  const later = arrivesLater(g)
+  const arrivalText = `Arrives ${g.arrival_date}${g.nights ? `, ${g.nights} nights` : ''}`
+
+  // Instructions from the leadsheet notes come first
+  if (/book this week/.test(notes) && !['Meeting Booked', 'Hot Lead', 'Converted'].includes(g.status)) {
+    return { score: 92, action: 'Book their tour this week', reason: `Leadsheet: "${g.notes}"`, urgent: true }
+  }
+  if (/\btoured\b/.test(notes) && ['Arriving Soon', 'Contacted'].includes(g.status)) {
+    return { score: urgent ? 78 : 58, action: 'Follow up on their tour', reason: `${g.notes}${left ? `, ${left}` : ''}`, urgent }
+  }
+  // Not here yet: plan for the stay, don't count down the days
+  if (later && ['Arriving Soon', 'Contacted'].includes(g.status)) {
+    if (g.status === 'Contacted') {
+      return { score: 25, action: 'Line up a coffee or tour for their stay', reason: `Welcome sent. ${arrivalText}`, urgent: false }
+    }
+  }
 
   switch (g.status) {
     case 'Hot Lead':
