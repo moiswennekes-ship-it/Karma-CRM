@@ -14,12 +14,6 @@ function isSecondWeek(g) {
   return /\b\d+(st|nd|rd|th)\b/i.test(g.linked_stay || '')
 }
 
-// "FROM <resort>": the guest starts their trip at another Karma resort,
-// which makes the pre-arrival contact (in-house guidelines).
-function comesFromOtherResort(g) {
-  return /\bfrom\s+[a-z]/i.test(g.linked_stay || '')
-}
-
 // Open contract or already bought on this trip: not to be pitched.
 function isOpenContract(g) {
   return /open\s+(deal|contract)/i.test(g.notes || '')
@@ -105,10 +99,7 @@ export function nextAction(g) {
         // Welcome email + WhatsApp go out a couple of days before arrival
         const arr = parseKarmaDate(g.arrival_date)
         const toArrival = arr ? Math.round((new Date(arr).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null
-        if (comesFromOtherResort(g)) {
-          score = 12; action = 'Welcome them when they arrive'
-          reason = `Coming from another Karma resort (${g.linked_stay}), which does the pre-arrival contact. ${arrivalText}`
-        } else if (toArrival !== null && toArrival <= 3) {
+        if (toArrival !== null && toArrival <= 3) {
           score = toArrival <= 1 ? 70 : 55
           action = 'Send the welcome email + WhatsApp'
           reason = `Welcome due: ${arrivalText}`
