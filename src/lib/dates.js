@@ -64,10 +64,14 @@ export function isFuture(dateStr) {
 export function daysUntilDeparture(departDateStr) {
   const d = parseKarmaDate(departDateStr)
   if (!d) return null
+  // Compare calendar days (midnight to midnight). parseKarmaDate sets the
+  // time to 23:59:59, which made Math.ceil count the departure day as an
+  // extra full day (e.g. leaving the 15th on the 13th showed "3 days").
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
-  return diff
+  const departDay = new Date(d)
+  departDay.setHours(0, 0, 0, 0)
+  return Math.round((departDay - today) / (1000 * 60 * 60 * 24))
 }
 
 export function isInHouse(arrivalStr, departStr) {
