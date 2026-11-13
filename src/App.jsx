@@ -29,8 +29,15 @@ const NAV = [
   { id: 'coach',  icon: 'ti-sparkles',       label: 'Ask Guru' },
   { id: 'import', icon: 'ti-table-import',   label: 'Import' },
   { id: 'tools',  icon: 'ti-calculator',     label: 'Tools' },
-  { id: 'team',   icon: 'ti-chart-bar',      label: 'Manager', managerOnly: true },
 ]
+
+// Managers don't work leads: they get their own three screens.
+const MANAGER_NAV = [
+  { id: 'team',    icon: 'ti-chart-bar', label: 'Team' },
+  { id: 'teamcal', icon: 'ti-calendar',  label: 'Calendar' },
+  { id: 'teamact', icon: 'ti-activity',  label: 'Activity' },
+]
+const MANAGER_TAB = { team: 'overview', teamcal: 'calendar', teamact: 'activity' }
 
 const SCREEN_META = {
   today:  { title: 'Today', sub: 'Who to work next, and why' },
@@ -39,7 +46,9 @@ const SCREEN_META = {
   coach:  { title: 'Ask Guru', sub: 'Your AI sales coach, messages, objections and the Karma Brain' },
   import: { title: 'Import & weeks', sub: 'Paste the weekly leadsheet, manage weeks' },
   tools:  { title: 'Tools', sub: 'Points Passport, fee projections, fractional comparison' },
-  team:   { title: 'Manager', sub: 'Reps, untouched leads, tours and activity' },
+  team:    { title: 'Team', sub: 'What every rep is up to' },
+  teamcal: { title: 'Team calendar', sub: "Every rep's guests and tours" },
+  teamact: { title: 'Activity', sub: 'Everything the reps have logged' },
 }
 
 function ImportHub({ currentWeek, currentYear, guests, onImport, onUpdate, onStartNewWeek, onOpenGuest }) {
@@ -96,6 +105,11 @@ export default function App() {
   const [currentYear, setCurrentYear] = useState(karmaYear())
   const [focusGuestId, setFocusGuestId] = useState(null)
   const [moreOpen, setMoreOpen] = useState(false)
+  useEffect(() => {
+    if (isManager && !MANAGER_TAB[screen]) setScreen('team')
+    if (!isManager && MANAGER_TAB[screen]) setScreen('today')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isManager])
   const [editingGuest, setEditingGuest] = useState(null)
 
   // Karma weeks run Saturday to Friday and the number comes from the date,
@@ -171,7 +185,7 @@ export default function App() {
     )
   }
 
-  const nav = NAV.filter(item => !item.managerOnly || isManager)
+  const nav = isManager ? MANAGER_NAV : NAV
   const meta = SCREEN_META[screen] || SCREEN_META.today
   const firstName = staff?.name ? staff.name.split(' ')[0] : ''
   const title = screen === 'today' && firstName
@@ -232,20 +246,22 @@ export default function App() {
             {!isMobile && <p style={{ fontSize: 11, color: 'var(--ink3)', margin: '1px 0 0' }}>{meta.sub}{weekLabel ? ` · ${weekLabel}` : ''}</p>}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Btn variant="ocean" size="sm" onClick={() => setAddOpen(true)}>
-              <i className="ti ti-user-plus" />{!isMobile && ' Add guest'}
-            </Btn>
+            {!isManager && (
+              <Btn variant="ocean" size="sm" onClick={() => setAddOpen(true)}>
+                <i className="ti ti-user-plus" />{!isMobile && ' Add guest'}
+              </Btn>
+            )}
             {isMobile && <i className="ti ti-logout" onClick={signOut} style={{ fontSize: 18, color: 'var(--ink3)', cursor: 'pointer' }} />}
           </div>
         </div>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', minHeight: 0, paddingBottom: isMobile && !['today', 'guests', 'calendar'].includes(screen) ? 80 : 0 }}>
           <ErrorBoundary key={screen} label={meta.title}>
-            {screen === 'today'  && <DashboardScreen guests={guests} isMobile={isMobile} onGoTo={setScreen} {...profileProps} />}
-            {screen === 'guests' && <GuestsScreen guests={guests} isMobile={isMobile} focusId={focusGuestId} onFocusUsed={() => setFocusGuestId(null)} {...profileProps} />}
-            {screen === 'calendar' && <CalendarScreen guests={guests} isMobile={isMobile} onEditGuest={editGuest} staffName={staff?.name} onOpenGuest={(id) => { setFocusGuestId(id); setScreen('guests') }} />}
-            {screen === 'coach'  && <CoachScreen guests={guests} />}
-            {screen === 'import' && (
+            {!isManager && screen === 'today'  && <DashboardScreen guests={guests} isMobile={isMobile} onGoTo={setScreen} {...profileProps} />}
+            {!isManager && screen === 'guests' && <GuestsScreen guests={guests} isMobile={isMobile} focusId={focusGuestId} onFocusUsed={() => setFocusGuestId(null)} {...profileProps} />}
+            {!isManager && screen === 'calendar' && <CalendarScreen guests={guests} isMobile={isMobile} onEditGuest={editGuest} staffName={staff?.name} onOpenGuest={(id) => { setFocusGuestId(id); setScreen('guests') }} />}
+            {!isManager && screen === 'coach'  && <CoachScreen guests={guests} />}
+            {!isManager && screen === 'import' && (
               <ImportHub
                 currentWeek={currentWeek}
                 currentYear={currentYear}
@@ -262,8 +278,8 @@ export default function App() {
                 onStartNewWeek={() => { reload(); setScreen('today') }}
               />
             )}
-            {screen === 'tools'  && <ToolsHub guests={guests} addGuest={addGuest} onGoToGuest={() => setScreen('guests')} />}
-            {screen === 'team' && isManager && <ManagerScreen guests={teamGuests} interactions={teamActivity} isMobile={isMobile} currentStaffId={staff.id} />}
+            {!isManager && screen === 'tools'  && <ToolsHub guests={guests} addGuest={addGuest} onGoToGuest={() => setScreen('guests')} />}
+            {isManager && MANAGER_TAB[screen] && <ManagerScreen guests={teamGuests} interactions={teamActivity} isMobile={isMobile} currentStaffId={staff.id} tab={MANAGER_TAB[screen]} onTab={t => setScreen(Object.keys(MANAGER_TAB).find(k => MANAGER_TAB[k] === t))} />}
           </ErrorBoundary>
         </div>
       </div>
@@ -271,7 +287,7 @@ export default function App() {
       {/* BOTTOM NAV (phone) */}
       {isMobile && (() => {
         // Four main screens on the bar; the rest live under More
-        const main = ['today', 'guests', 'calendar', 'coach']
+        const main = isManager ? nav.map(i => i.id) : ['today', 'guests', 'calendar', 'coach']
         const bar = nav.filter(i => main.includes(i.id))
         const more = nav.filter(i => !main.includes(i.id))
         const moreActive = more.some(i => i.id === screen)
@@ -300,12 +316,12 @@ export default function App() {
             )}
             <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'var(--ink)', display: 'flex', padding: '9px 4px calc(9px + env(safe-area-inset-bottom))', zIndex: 100 }}>
               {bar.map(item => (
-                <Item key={item.id} icon={item.icon} label={item.id === 'coach' ? 'Guru' : item.label} active={screen === item.id && !moreOpen} onClick={() => { setScreen(item.id); setMoreOpen(false) }} />
+                <div key={item.id} style={{ flex: 1, position: 'relative', display: 'flex' }}>
+                  <Item icon={item.icon} label={item.id === 'coach' ? 'Guru' : item.label} active={screen === item.id && !moreOpen} onClick={() => { setScreen(item.id); setMoreOpen(false) }} />
+                  {item.id === 'team' && untouchedCount > 0 && <span style={{ position: 'absolute', top: -2, right: '22%', background: 'var(--rose)', color: 'white', borderRadius: 10, padding: '0 6px', fontSize: 10.5, fontWeight: 700 }}>{untouchedCount}</span>}
+                </div>
               ))}
-              <div style={{ flex: 1, position: 'relative', display: 'flex' }}>
-                <Item icon="ti-dots" label="More" active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)} />
-                {untouchedCount > 0 && <span style={{ position: 'absolute', top: -2, right: '22%', background: 'var(--rose)', color: 'white', borderRadius: 10, padding: '0 6px', fontSize: 10.5, fontWeight: 700 }}>{untouchedCount}</span>}
-              </div>
+              {more.length > 0 && <Item icon="ti-dots" label="More" active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)} />}
             </div>
           </>
         )

@@ -16,9 +16,11 @@ const ago = iso => {
 
 // MANAGER: every rep's numbers, untouched leads, the team calendar and
 // what's been logged. Read-only: managers watch, reps work their guests.
-export function ManagerScreen({ guests, interactions, isMobile, currentStaffId }) {
+export function ManagerScreen({ guests, interactions, isMobile, currentStaffId, tab: tabProp, onTab }) {
   const [staff, setStaff] = useState([])
-  const [tab, setTab] = useState('overview')
+  const [tabState, setTabState] = useState('overview')
+  const tab = tabProp || tabState
+  const setTab = t => (onTab ? onTab(t) : setTabState(t))
   const [repId, setRepId] = useState('all')
   const [openRep, setOpenRep] = useState(null)
   const [openGuestId, setOpenGuestId] = useState(null)
@@ -69,7 +71,7 @@ export function ManagerScreen({ guests, interactions, isMobile, currentStaffId }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <div style={{ display: 'flex', gap: 2, padding: '0 18px', borderBottom: '1px solid var(--border)', background: 'white' }}>
+      {!tabProp && <div style={{ display: 'flex', gap: 2, padding: '0 18px', borderBottom: '1px solid var(--border)', background: 'white' }}>
         {[['overview', 'Overview'], ['calendar', 'Team calendar'], ['activity', 'Activity']].map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} style={{
             background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', padding: '12px 14px', fontSize: 13.5,
@@ -77,7 +79,7 @@ export function ManagerScreen({ guests, interactions, isMobile, currentStaffId }
             borderBottom: `2px solid ${tab === k ? 'var(--ocean)' : 'transparent'}`,
           }}>{l}{k === 'overview' && untouched.length ? <span style={{ marginLeft: 6, background: 'var(--rose)', color: 'white', borderRadius: 10, padding: '1px 7px', fontSize: 11 }}>{untouched.length}</span> : null}</button>
         ))}
-      </div>
+      </div>}
 
       {tab === 'calendar' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
