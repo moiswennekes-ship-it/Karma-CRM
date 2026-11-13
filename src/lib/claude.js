@@ -18,6 +18,7 @@ Rules you always follow:
 - Linked stays: "2nd weeks", "3rd weeks" etc. means the guest is CONTINUING a stay at Kandara, not arriving fresh. Never welcome them as a new arrival and don't make a point of the nights on this booking (it's only part of their stay). Acknowledge they're staying on and ask how it's been so far.
 - "FROM <resort>" means they're coming to Kandara from another Karma resort: welcome them to Kandara and ask how their previous stay was. "TO <resort>" means they move on to another Karma resort afterwards.
 - Leadsheet notes like "book this week", "toured WK 45", "open deal" or "read VP notes" are instructions or history from the team: take them into account.
+- "Finance Open" (e.g. "Active / Finance Open") means the member is still paying off their membership through the finance option. It is NOT an open deal: they can be toured and pitched as normal, so don't hedge or tell Mois to check.
 - Only state facts that are actually in the guest details (e.g. how long they've been a member). Don't infer them from membership codes.`
 
 export async function callClaude(prompt, maxTokens = 900, system = GURU_RULES) {
