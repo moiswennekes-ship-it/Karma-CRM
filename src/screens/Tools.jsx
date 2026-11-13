@@ -254,46 +254,6 @@ export function ComparisonScreen() {
       </div>
 
       <Card style={{ marginBottom: 14 }}>
-        <CardHeader title={`Points comparison: membership to ${endYear} (${years} yrs), fractional to ${fEndYear} (${fYears} yrs)`} />
-        <CardBody>
-          <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-            {[
-              { label: `Current membership${cBiAnnual ? ' (bi-annual)' : ''}`, color: 'var(--ink)', year: cPtsYear, total: cPtsTotal, cost: cTotal, end: endYear },
-              { label: share.name, color: 'var(--ocean)', year: fPtsYear, total: fPtsTotal, cost: fTotal, end: fEndYear },
-            ].map(col => (
-              <div key={col.label}>
-                <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 10 }}>{col.label}</div>
-                {[
-                  ['Points per year', num(col.year) + ' pts'],
-                  [`Total points to ${col.end}`, num(col.total) + ' pts'],
-                  ['Net cost per point', perPt(col.cost, col.total)],
-                ].map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--border)', fontSize: 12.5 }}>
-                    <span style={{ color: 'var(--ink3)' }}>{k}</span>
-                    <span style={{ fontWeight: 500, color: col.color }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-          <div style={{
-            background: fPtsYear >= cPtsYear ? 'var(--ocean-light)' : 'var(--sand)', borderRadius: 10, padding: 16, textAlign: 'center',
-            border: '1px solid var(--border)',
-          }}>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ocean)', marginBottom: 4 }}>
-              {fPtsTotal >= cPtsTotal ? `${share.name} gives more points in total` : 'Current membership gives more points in total'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--ocean)' }}>
-              {fPtsTotal >= cPtsTotal ? '+' : '−'}{num(Math.abs(fPtsTotal - cPtsTotal))} pts
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 4 }}>
-              {num(Math.abs(fPtsYear - cPtsYear))} pts a year {fPtsYear >= cPtsYear ? 'more' : 'less'}{cPtsYear > 0 ? ` (${(fPtsYear / cPtsYear).toFixed(1)}× the points)` : ''}. Membership: {years} years to {endYear}. Fractional: {fYears} years to {fEndYear}.
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card style={{ marginBottom: 14 }}>
         <CardHeader title={`Cost comparison: membership to ${endYear}, fractional to ${fEndYear}`} />
         <CardBody>
           <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -337,6 +297,46 @@ export function ComparisonScreen() {
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 4 }}>
               Membership fees vs fractional purchase price and projected exit value. Exit value is an estimate.
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card style={{ marginBottom: 14 }}>
+        <CardHeader title={`Points comparison: membership to ${endYear} (${years} yrs), fractional to ${fEndYear} (${fYears} yrs)`} />
+        <CardBody>
+          <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            {[
+              { label: `Current membership${cBiAnnual ? ' (bi-annual)' : ''}`, color: 'var(--ink)', year: cPtsYear, total: cPtsTotal, cost: cTotal, end: endYear },
+              { label: share.name, color: 'var(--ocean)', year: fPtsYear, total: fPtsTotal, cost: fTotal, end: fEndYear },
+            ].map(col => (
+              <div key={col.label}>
+                <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 10 }}>{col.label}</div>
+                {[
+                  ['Points per year', num(col.year) + ' pts'],
+                  [`Total points to ${col.end}`, num(col.total) + ' pts'],
+                  ['Net cost per point', perPt(col.cost, col.total)],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--border)', fontSize: 12.5 }}>
+                    <span style={{ color: 'var(--ink3)' }}>{k}</span>
+                    <span style={{ fontWeight: 500, color: col.color }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div style={{
+            background: fPtsYear >= cPtsYear ? 'var(--ocean-light)' : 'var(--sand)', borderRadius: 10, padding: 16, textAlign: 'center',
+            border: '1px solid var(--border)',
+          }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ocean)', marginBottom: 4 }}>
+              {fPtsTotal >= cPtsTotal ? `${share.name} gives more points in total` : 'Current membership gives more points in total'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--ocean)' }}>
+              {fPtsTotal >= cPtsTotal ? '+' : '−'}{num(Math.abs(fPtsTotal - cPtsTotal))} pts
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 4 }}>
+              {num(Math.abs(fPtsYear - cPtsYear))} pts a year {fPtsYear >= cPtsYear ? 'more' : 'less'}{cPtsYear > 0 ? ` (${(fPtsYear / cPtsYear).toFixed(1)}× the points)` : ''}. Membership: {years} years to {endYear}. Fractional: {fYears} years to {fEndYear}.
             </div>
           </div>
         </CardBody>
