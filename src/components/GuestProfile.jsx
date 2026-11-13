@@ -11,8 +11,17 @@ const TYPE_ICON = {
   whatsapp: 'ti-brand-whatsapp', email: 'ti-mail', meeting: 'ti-calendar',
 }
 
-export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, onDelete, onEdit }) {
+function Chip({ icon, bg, color, children }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 500, background: bg, color, borderRadius: 14, padding: '3px 10px' }}>
+      <i className={`ti ${icon}`} /> {children}
+    </span>
+  )
+}
+
+export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, onDelete, onEdit, stickyTop = 0 }) {
   const [activity, setActivity] = useState([])
+  const [tab, setTab] = useState('overview')
   // Only what Mois logged himself (WhatsApp, notes, meetings...), not automatic stage changes
   const logged = activity.filter(a => a.type !== 'status_change')
   const [note, setNote] = useState('')
@@ -25,6 +34,7 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
   }, [guest?.id])
 
   useEffect(() => { loadActivity() }, [loadActivity, guest?.status])
+  useEffect(() => { setTab('overview') }, [guest?.id])
 
   if (!guest) {
     return (
@@ -81,160 +91,178 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
     if (window.confirm(`Delete ${guest.name}? This cannot be undone.`)) onDelete(guest.id)
   }
 
+  const firstName = guest.name.split(/\s|&/)[0]
+  const Label = ({ children }) => (
+    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 4 }}>{children}</div>
+  )
+
   return (
-    <div style={{ padding: 18 }}>
-      {departed && (
-        <div style={{ background: '#F0F0F0', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <i className="ti ti-plane-departure" style={{ fontSize: 14 }} /> This guest has departed
-        </div>
-      )}
-      {leavingSoon && !departed && (
-        <div style={{ background: 'var(--rose-light)', border: '1px solid rgba(192,80,74,.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: 'var(--rose)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <i className="ti ti-clock" style={{ fontSize: 14 }} /> {formatDaysLeft(guest.depart_date)}: closing window
-        </div>
-      )}
-
-      {/* Header */}
-      <div style={{ display: 'flex', gap: 13, alignItems: 'flex-start', marginBottom: 14 }}>
-        <Avatar initials={guest.initials} colorIndex={guest.color_index} size={50} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 500, lineHeight: 1.2 }}>{guest.name}</div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink3)', marginTop: 3 }}>{guest.member_type}</div>
-          {guest.member_number && <div style={{ fontSize: 11, color: 'var(--ink4)', marginTop: 1 }}>Member #{guest.member_number}</div>}
-        </div>
-      </div>
-
-      {/* Earlier stays (same member number) */}
-      {guest._past?.length > 0 && (
-        <div style={{ background: guest._stayKind === 'returning' ? '#F0EDFC' : 'var(--ocean-light)', borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: guest._stayKind === 'returning' ? '#5A3DB8' : 'var(--ocean)', marginBottom: 6 }}>
-            <i className={`ti ti-${guest._stayKind === 'returning' ? 'refresh' : 'link'}`} /> {guest._stayKind === 'returning' ? `Returning guest · ${guest._past.length} earlier stay${guest._past.length > 1 ? 's' : ''}` : 'Continuing stay'}
-          </div>
-          {guest._past.slice(0, 4).map(p => (
-            <div key={p.id} style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 5 }}>
-              <div style={{ fontWeight: 500 }}>{weekTag(p)} <span style={{ fontWeight: 400, color: 'var(--ink3)' }}>({p.arrival_date} → {p.depart_date}) · {p.status}{p.outcome === 'lost' ? ' · no deal' : p.outcome === 'won' ? ' · bought' : ''}</span></div>
-              {p.outcome_reason && <div style={{ color: 'var(--ink2)' }}>Why: {p.outcome_reason}</div>}
-              {p.notes && <div style={{ color: 'var(--ink2)' }}>{p.notes}</div>}
+    <div>
+      {/* ── Fixed header: who, stage, stay, tabs ── */}
+      <div style={{ position: 'sticky', top: stickyTop, zIndex: 2, background: 'white', borderBottom: '1px solid var(--border)', padding: '16px 18px 0' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+          <Avatar initials={guest.initials} colorIndex={guest.color_index} size={44} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 500, lineHeight: 1.2 }}>{guest.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 2 }}>
+              {guest.arrival_date || '?'} → {guest.depart_date || '?'}{guest.nights ? ` · ${guest.nights} nights` : ''}{guest.room ? ` · Rm ${guest.room}` : ''}
             </div>
-          ))}
-        </div>
-      )}
-
-      {guest.tour_at && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F0EDFC', color: '#5A3DB8', borderRadius: 10, padding: '9px 12px', marginBottom: 14, fontSize: 13, fontWeight: 500 }}>
-          <i className="ti ti-calendar-event" /> Tour {tourLabel(guest.tour_at)}
-          <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink3)', marginLeft: 'auto' }}>change it in Calendar</span>
-        </div>
-      )}
-
-      {/* Next best action */}
-      {next && (
-        <div style={{ background: 'var(--gold-light)', border: '1px solid var(--border2)', borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--amber)', marginBottom: 3 }}>Next best action</div>
-          <div style={{ fontSize: 13, fontWeight: 500 }}>{next.action}</div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink3)' }}>{next.reason}</div>
-        </div>
-      )}
-      {guest.outcome && (
-        <div style={{ background: guest.outcome === 'won' ? 'var(--palm-light)' : '#F3F2EE', borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ fontSize: 12 }}>
-            <strong>{guest.outcome === 'won' ? 'Won' : 'No deal'}</strong>{guest.outcome_reason ? `: ${guest.outcome_reason}` : ''}
           </div>
-          {guest.outcome === 'lost' && <Btn variant="ghost" size="sm" onClick={reopen}>Reopen</Btn>}
         </div>
-      )}
 
-      {/* Key fields */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-        {[
-          ['Membership', guest.membership],
-          ['Stay', `${guest.arrival_date || '?'} → ${guest.depart_date || '?'}`],
-          ['Nights', guest.nights ? `${guest.nights} nights` : '—'],
-          ['Room', guest.room || '—'],
-          ['Nationality', guest.nationality || '—'],
-          ['Linked stay', guest.linked_stay || 'No'],
-          ['WhatsApp', guest.whatsapp || '—'],
-          ['Email', guest.email || '—'],
-        ].map(([label, val]) => (
-          <div key={label}>
-            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 2 }}>{label}</div>
-            <div style={{ fontSize: 12, fontWeight: 500, wordBreak: 'break-word' }}>{val}</div>
-          </div>
-        ))}
-      </div>
-      {guest.notes && (
-        <div style={{ fontSize: 12, color: 'var(--ink2)', background: 'var(--sand)', borderRadius: 8, padding: '8px 10px', marginBottom: 14 }}>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 3 }}>Key notes</div>
-          {guest.notes}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+          {departed && <Chip icon="ti-plane-departure" bg="#F0F0F0" color="#888">Departed</Chip>}
+          {leavingSoon && !departed && <Chip icon="ti-clock" bg="var(--rose-light)" color="var(--rose)">{formatDaysLeft(guest.depart_date)}</Chip>}
+          {guest.tour_at && <Chip icon="ti-calendar-event" bg="#FBF3E4" color="#9A6A1F">Tour {tourLabel(guest.tour_at)}</Chip>}
+          {guest._stayKind === 'returning' && <Chip icon="ti-refresh" bg="#FBF3E4" color="#9A6A1F">Returning guest</Chip>}
+          {guest._stayKind === 'continuing' && <Chip icon="ti-link" bg="var(--ocean-light)" color="var(--ocean)">Continuing stay</Chip>}
+          {guest.outcome && <Chip icon={guest.outcome === 'won' ? 'ti-trophy' : 'ti-circle-x'} bg={guest.outcome === 'won' ? 'var(--palm-light)' : '#F3F2EE'} color={guest.outcome === 'won' ? 'var(--palm)' : '#8A8A8E'}>{guest.outcome === 'won' ? 'Won' : 'No deal'}</Chip>}
         </div>
-      )}
 
-      {/* Stage */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 5 }}>Stage</div>
-        <div style={{ display: 'flex', gap: 7 }}>
+        <div style={{ display: 'flex', gap: 7, marginBottom: 12 }}>
           <FieldSelect value={guest.status} onChange={changeStatus}
             options={ALL_STATUSES.includes(guest.status) ? ALL_STATUSES : [guest.status, ...ALL_STATUSES]}
             style={{ marginBottom: 0, flex: 1 }} />
-          {!guest.outcome && guest.status !== 'Converted' && (
-            <Btn variant="danger" size="sm" onClick={markNoDeal}>No deal</Btn>
+          {guest.whatsapp && (
+            <a href={`https://wa.me/${guest.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" title="Open WhatsApp"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 12px', borderRadius: 8, background: '#25D366', color: 'white', fontSize: 12.5, fontWeight: 500, textDecoration: 'none' }}>
+              <i className="ti ti-brand-whatsapp" style={{ fontSize: 16 }} /> WhatsApp
+            </a>
           )}
         </div>
-      </div>
 
-      {/* Ask Guru */}
-      <div style={{ marginBottom: 16 }}>
-        <AskGuru guest={guest} activity={logged} compact />
-      </div>
-
-      {/* Activity timeline */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 6 }}>Activity</div>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-          {[['note', 'Note'], ['whatsapp', 'WhatsApp'], ['meeting', 'Meeting'], ['email', 'Email']].map(([k, l]) => (
-            <button key={k} onClick={() => setNoteType(k)} style={{
-              border: '1px solid var(--border2)', borderRadius: 14, padding: '3px 9px', fontSize: 11, cursor: 'pointer',
-              background: noteType === k ? 'var(--ocean)' : 'white', color: noteType === k ? 'white' : 'var(--ink3)', fontFamily: 'var(--font-body)',
+        <div style={{ display: 'flex', gap: 2 }}>
+          {[['overview', 'Overview'], ['guru', 'Ask Guru'], ['activity', `Activity${logged.length ? ` · ${logged.length}` : ''}`]].map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} style={{
+              flex: 1, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)',
+              padding: '9px 4px', fontSize: 13, fontWeight: tab === k ? 600 : 400,
+              color: tab === k ? 'var(--ocean)' : 'var(--ink3)',
+              borderBottom: `2px solid ${tab === k ? 'var(--ocean)' : 'transparent'}`,
             }}>{l}</button>
           ))}
         </div>
-        <textarea
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          placeholder={noteType === 'note' ? 'What happened? What did they say?' : `Log a ${noteType}: what was said or sent`}
-          style={{
-            width: '100%', border: '1px solid var(--border2)', borderRadius: 8, padding: '9px 11px',
-            fontFamily: 'var(--font-body)', fontSize: 12, background: 'var(--sand)', resize: 'none', height: 60,
-            lineHeight: 1.5, marginBottom: 6, outline: 'none',
-          }}
-        />
-        <Btn variant="ghost" size="sm" onClick={addNote} disabled={saving || !note.trim()} style={{ width: '100%', justifyContent: 'center', marginBottom: 10 }}>
-          <i className="ti ti-plus" /> {saving ? 'Saving...' : 'Add to activity'}
-        </Btn>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {logged.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink4)' }}>Nothing logged yet.</div>}
-          {logged.map(a => (
-            <div key={a.id} style={{ display: 'flex', gap: 8, fontSize: 12 }}>
-              <i className={`ti ${TYPE_ICON[a.type] || 'ti-point'}`} style={{ color: 'var(--ocean)', fontSize: 14, marginTop: 1 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ color: 'var(--ink2)', whiteSpace: 'pre-wrap' }}>{a.content}</div>
-                <div style={{ fontSize: 10.5, color: 'var(--ink4)' }}>
-                  {new Date(a.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  {a.staff_name ? ` · ${a.staff_name}` : ''}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
-      <div style={{ paddingTop: 10, borderTop: '1px solid var(--border)', display: 'flex', gap: 7 }}>
-        <Btn variant="ghost" size="sm" onClick={() => onEdit(guest)} style={{ flex: 1, justifyContent: 'center' }}>
-          <i className="ti ti-pencil" /> Edit guest
-        </Btn>
-        <Btn variant="danger" size="sm" onClick={handleDelete} style={{ flex: 1, justifyContent: 'center' }}>
-          <i className="ti ti-trash" /> Delete
-        </Btn>
+      <div style={{ padding: 18 }}>
+        {/* ── OVERVIEW ── */}
+        {tab === 'overview' && <>
+          {next && (
+            <div style={{ background: 'var(--gold-light)', border: '1px solid var(--border2)', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
+              <Label>Next step</Label>
+              <div style={{ fontSize: 14.5, fontWeight: 600 }}>{next.action}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 2 }}>{next.reason}</div>
+              <div style={{ display: 'flex', gap: 7, marginTop: 10 }}>
+                <Btn size="sm" onClick={() => setTab('guru')}><i className="ti ti-sparkles" /> Ask Guru</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => setTab('activity')}><i className="ti ti-plus" /> Log something</Btn>
+              </div>
+            </div>
+          )}
+
+          {guest.outcome && (
+            <div style={{ background: guest.outcome === 'won' ? 'var(--palm-light)' : '#F3F2EE', borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ fontSize: 12.5 }}>
+                <strong>{guest.outcome === 'won' ? 'Won' : 'No deal'}</strong>{guest.outcome_reason ? `: ${guest.outcome_reason}` : ''}
+              </div>
+              {guest.outcome === 'lost' && <Btn variant="ghost" size="sm" onClick={reopen}>Reopen</Btn>}
+            </div>
+          )}
+
+          {guest.notes && (
+            <div style={{ fontSize: 13, color: 'var(--ink2)', background: 'var(--sand)', borderRadius: 10, padding: '10px 12px', marginBottom: 14, lineHeight: 1.5 }}>
+              <Label>Leadsheet notes</Label>
+              {guest.notes}
+            </div>
+          )}
+
+          {guest._past?.length > 0 && (
+            <div style={{ background: guest._stayKind === 'returning' ? '#FBF3E4' : 'var(--ocean-light)', borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
+              <Label>{guest._stayKind === 'returning' ? `Earlier stays · ${guest._past.length}` : 'Continuing from'}</Label>
+              {guest._past.slice(0, 4).map(p => (
+                <div key={p.id} style={{ fontSize: 12.5, lineHeight: 1.5, marginBottom: 5 }}>
+                  <div style={{ fontWeight: 500 }}>{weekTag(p)} <span style={{ fontWeight: 400, color: 'var(--ink3)' }}>({p.arrival_date} → {p.depart_date}) · {p.status}{p.outcome === 'lost' ? ' · no deal' : p.outcome === 'won' ? ' · bought' : ''}</span></div>
+                  {p.outcome_reason && <div style={{ color: 'var(--ink2)' }}>Why: {p.outcome_reason}</div>}
+                  {p.notes && <div style={{ color: 'var(--ink2)' }}>{p.notes}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+            {[
+              ['Membership', guest.membership || guest.member_type || '—'],
+              ['Member #', guest.member_number || '—'],
+              ['Nationality', guest.nationality || '—'],
+              ['Linked stay', guest.linked_stay || 'No'],
+              ['WhatsApp', guest.whatsapp || '—'],
+              ['Email', guest.email || '—'],
+            ].map(([label, val]) => (
+              <div key={label}>
+                <Label>{label}</Label>
+                <div style={{ fontSize: 13, fontWeight: 500, wordBreak: 'break-word' }}>{val}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            <Btn variant="ghost" size="sm" onClick={() => onEdit(guest)} style={{ flex: 1, justifyContent: 'center' }}>
+              <i className="ti ti-pencil" /> Edit
+            </Btn>
+            {!guest.outcome && guest.status !== 'Converted' && (
+              <Btn variant="ghost" size="sm" onClick={markNoDeal} style={{ flex: 1, justifyContent: 'center' }}>
+                <i className="ti ti-circle-x" /> No deal
+              </Btn>
+            )}
+            <Btn variant="danger" size="sm" onClick={handleDelete} style={{ flex: 1, justifyContent: 'center' }}>
+              <i className="ti ti-trash" /> Delete
+            </Btn>
+          </div>
+        </>}
+
+        {/* ── ASK GURU ── */}
+        {tab === 'guru' && <AskGuru guest={guest} activity={logged} compact />}
+
+        {/* ── ACTIVITY ── */}
+        {tab === 'activity' && <>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+            {[['whatsapp', 'WhatsApp', 'ti-brand-whatsapp'], ['note', 'Note', 'ti-notes'], ['meeting', 'Meeting', 'ti-calendar'], ['email', 'Email', 'ti-mail']].map(([k, l, ic]) => (
+              <button key={k} onClick={() => setNoteType(k)} style={{
+                border: '1px solid var(--border2)', borderRadius: 16, padding: '6px 12px', fontSize: 12.5, cursor: 'pointer',
+                background: noteType === k ? 'var(--ocean)' : 'white', color: noteType === k ? 'white' : 'var(--ink2)', fontFamily: 'var(--font-body)',
+                display: 'flex', alignItems: 'center', gap: 5,
+              }}><i className={`ti ${ic}`} /> {l}</button>
+            ))}
+          </div>
+          <textarea
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder={noteType === 'note' ? `What happened with ${firstName}? What did they say?` : `Log a ${noteType}: what was said or sent`}
+            style={{
+              width: '100%', border: '1px solid var(--border2)', borderRadius: 10, padding: '10px 12px',
+              fontFamily: 'var(--font-body)', fontSize: 13, background: 'var(--sand)', resize: 'none', height: 72,
+              lineHeight: 1.5, marginBottom: 8, outline: 'none',
+            }}
+          />
+          <Btn size="sm" onClick={addNote} disabled={saving || !note.trim()} style={{ width: '100%', justifyContent: 'center', marginBottom: 16 }}>
+            <i className="ti ti-plus" /> {saving ? 'Saving...' : 'Add to activity'}
+          </Btn>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {logged.length === 0 && <div style={{ fontSize: 13, color: 'var(--ink4)' }}>Nothing logged yet.</div>}
+            {logged.map(a => (
+              <div key={a.id} style={{ display: 'flex', gap: 10, fontSize: 13 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--ocean-light)', color: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <i className={`ti ${TYPE_ICON[a.type] || 'ti-point'}`} style={{ fontSize: 14 }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: 'var(--ink)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{a.content}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink4)', marginTop: 2 }}>
+                    {new Date(a.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {a.staff_name ? ` · ${a.staff_name}` : ''}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>}
       </div>
     </div>
   )

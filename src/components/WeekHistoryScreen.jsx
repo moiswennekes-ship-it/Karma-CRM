@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Btn, SectionHeader } from './UI'
+import { Btn, SectionHeader, STATUS_CFG } from './UI'
 import { karmaWeekRange } from '../lib/dates'
 import { callClaude } from '../lib/claude'
 
@@ -43,24 +43,13 @@ function WeeklyReview({ weekNumber, weekYear }) {
   )
 }
 
-const STATUS_CFG = {
-  'Arriving Soon':  { bg: '#EBF6F8', color: '#1A5F6E' },
-  'Contacted':      { bg: '#F3F2EE', color: '#6E6E73' },
-  'Meeting Booked': { bg: '#FBF5EB', color: '#B8762A' },
-  'Tour Booked':    { bg: '#FBF5EB', color: '#B8762A' },
-  'Toured':         { bg: '#F0EDFC', color: '#5A3DB8' },
-  'Follow-Up':      { bg: '#FBF0EF', color: '#C0504A' },
-  'Hot Lead':       { bg: '#FBF0EF', color: '#C0504A' },
-  'Proposal Sent':  { bg: '#EAF2ED', color: '#2D5A3D' },
-  'Converted':      { bg: '#EAF2ED', color: '#2D5A3D' },
-}
 
 const AVATAR_COLORS = [
   { bg: '#EBF6F8', color: '#1A5F6E' },
   { bg: '#EAF2ED', color: '#2D5A3D' },
   { bg: '#FBF0EF', color: '#C0504A' },
   { bg: '#FBF5EB', color: '#B8762A' },
-  { bg: '#F0EDFC', color: '#5A3DB8' },
+  { bg: '#FBF3E4', color: '#9A6A1F' },
 ]
 
 function GuestCard({ g, i, onOpen }) {

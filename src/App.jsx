@@ -92,6 +92,7 @@ export default function App() {
   const [currentWeek, setCurrentWeek] = useState(karmaWeek())
   const [currentYear, setCurrentYear] = useState(karmaYear())
   const [focusGuestId, setFocusGuestId] = useState(null)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [editingGuest, setEditingGuest] = useState(null)
 
   // Karma weeks run Saturday to Friday and the number comes from the date,
@@ -234,9 +235,9 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', minHeight: 0, paddingBottom: isMobile && !['today', 'guests'].includes(screen) ? 70 : 0 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', minHeight: 0, paddingBottom: isMobile && !['today', 'guests', 'calendar'].includes(screen) ? 80 : 0 }}>
           <ErrorBoundary key={screen} label={meta.title}>
-            {screen === 'today'  && <DashboardScreen guests={guests} isMobile={isMobile} {...profileProps} />}
+            {screen === 'today'  && <DashboardScreen guests={guests} isMobile={isMobile} onGoTo={setScreen} {...profileProps} />}
             {screen === 'guests' && <GuestsScreen guests={guests} isMobile={isMobile} focusId={focusGuestId} onFocusUsed={() => setFocusGuestId(null)} {...profileProps} />}
             {screen === 'calendar' && <CalendarScreen guests={guests} isMobile={isMobile} onEditGuest={editGuest} staffName={staff?.name} onOpenGuest={(id) => { setFocusGuestId(id); setScreen('guests') }} />}
             {screen === 'coach'  && <CoachScreen guests={guests} />}
@@ -264,19 +265,43 @@ export default function App() {
       </div>
 
       {/* BOTTOM NAV (phone) */}
-      {isMobile && (
-        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'var(--ink)', display: 'flex', justifyContent: 'space-around', padding: '8px 4px calc(8px + env(safe-area-inset-bottom))', zIndex: 100 }}>
-          {nav.map(item => {
-            const active = screen === item.id
-            return (
-              <div key={item.id} onClick={() => setScreen(item.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, color: active ? '#D4A855' : 'rgba(255,255,255,.55)', fontSize: 10, cursor: 'pointer', minWidth: 52 }}>
-                <i className={`ti ${item.icon}`} style={{ fontSize: 20 }} />
-                {item.label}
+      {isMobile && (() => {
+        // Four main screens on the bar; the rest live under More
+        const main = ['today', 'guests', 'calendar', 'coach']
+        const bar = nav.filter(i => main.includes(i.id))
+        const more = nav.filter(i => !main.includes(i.id))
+        const moreActive = more.some(i => i.id === screen)
+        const Item = ({ icon, label, active, onClick }) => (
+          <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: active ? '#D4A855' : 'rgba(255,255,255,.6)', fontSize: 11.5, cursor: 'pointer', flex: 1 }}>
+            <i className={`ti ${icon}`} style={{ fontSize: 22 }} />
+            {label}
+          </div>
+        )
+        return (
+          <>
+            {moreOpen && (
+              <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(24,24,26,.4)', zIndex: 99 }}>
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: 10, right: 10, bottom: 'calc(76px + env(safe-area-inset-bottom))', background: 'white', borderRadius: 16, padding: 8, boxShadow: 'var(--shadow2)' }}>
+                  {more.map(item => (
+                    <div key={item.id} onClick={() => { setScreen(item.id); setMoreOpen(false) }} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 15,
+                      background: screen === item.id ? 'var(--ocean-light)' : 'transparent', color: screen === item.id ? 'var(--ocean)' : 'var(--ink)',
+                    }}>
+                      <i className={`ti ${item.icon}`} style={{ fontSize: 20 }} /> {item.label}
+                    </div>
+                  ))}
+                </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            )}
+            <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'var(--ink)', display: 'flex', padding: '9px 4px calc(9px + env(safe-area-inset-bottom))', zIndex: 100 }}>
+              {bar.map(item => (
+                <Item key={item.id} icon={item.icon} label={item.id === 'coach' ? 'Guru' : item.label} active={screen === item.id && !moreOpen} onClick={() => { setScreen(item.id); setMoreOpen(false) }} />
+              ))}
+              <Item icon="ti-dots" label="More" active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)} />
+            </div>
+          </>
+        )
+      })()}
 
       <AddGuestModal open={addOpen} onClose={() => setAddOpen(false)} onSave={addGuest} />
       <EditGuestModal

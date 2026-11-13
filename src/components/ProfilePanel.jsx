@@ -13,7 +13,7 @@ export function ProfilePanel({ guest, isMobile, onClose, ...profileProps }) {
           </button>
           <div style={{ fontSize: 14, fontWeight: 500 }}>{guest.name}</div>
         </div>
-        <GuestProfile guest={guest} {...profileProps} />
+        <GuestProfile guest={guest} stickyTop={45} {...profileProps} />
       </div>
     )
   }

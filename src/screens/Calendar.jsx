@@ -99,7 +99,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
                   <div style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 2, lineHeight: 1.4 }}>
                     {s.ins > 0 && <span style={{ color: 'var(--palm)' }}>{s.ins} in </span>}
                     {s.outs > 0 && <span style={{ color: 'var(--rose)' }}>{s.outs} out </span>}
-                    {s.tours > 0 && <span style={{ color: '#5A3DB8', fontWeight: 600 }}>{s.tours} tour{s.tours > 1 ? 's' : ''}</span>}
+                    {s.tours > 0 && <span style={{ color: '#9A6A1F', fontWeight: 600 }}>{s.tours} tour{s.tours > 1 ? 's' : ''}</span>}
                     {!s.ins && !s.outs && !s.tours && <span>{s.house} in house</span>}
                   </div>
                 </div>
@@ -138,7 +138,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
                         {isIn && !hasTour && <span style={{ color: 'var(--palm)' }}>IN</span>}
                         {isOut && !hasTour && <span style={{ color: 'var(--rose)' }}>OUT</span>}
                         {hasTour && (
-                          <span style={{ background: '#5A3DB8', color: 'white', borderRadius: 10, padding: '2px 7px' }}>
+                          <span style={{ background: '#9A6A1F', color: 'white', borderRadius: 10, padding: '2px 7px' }}>
                             <i className="ti ti-calendar-event" /> {tourTime(g.tour_at)}
                           </span>
                         )}
@@ -159,7 +159,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {tours.map(({ g }) => (
             <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'white', border: '1px solid var(--border)', borderRadius: 10, padding: '9px 12px' }}>
-              <div style={{ minWidth: 92, fontWeight: 600, color: '#5A3DB8', fontSize: 12.5 }}>{tourLabel(g.tour_at)}</div>
+              <div style={{ minWidth: 92, fontWeight: 600, color: '#9A6A1F', fontSize: 12.5 }}>{tourLabel(g.tour_at)}</div>
               <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => onOpenGuest(g.id)}>
                 <div style={{ fontSize: 13, fontWeight: 500 }}>{g.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink3)' }}>{g.membership || g.member_type}{g.room ? ` · Rm ${g.room}` : ''} · {g.arrival_date} → {g.depart_date}</div>

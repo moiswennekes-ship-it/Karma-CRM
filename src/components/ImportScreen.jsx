@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { stayKey, to24h, tourIso } from '../lib/dates'
 import { pastStaysFor, weekTag } from '../lib/history'
-import { Btn, Card, CardHeader, CardBody, SectionHeader } from './UI'
+import { Btn, Card, CardHeader, CardBody, SectionHeader, STATUS_CFG } from './UI'
 
 // ── COLUMN MAP (0-based) ──────────────────────────────────────
 // A=0  Name
@@ -201,23 +201,13 @@ function parseLeadsheet(text) {
   })
 }
 
-const STATUS_CFG = {
-  'Arriving Soon':  { bg: '#EBF6F8', color: '#1A5F6E' },
-  'Contacted':      { bg: '#F3F2EE', color: '#6E6E73' },
-  'Meeting Booked': { bg: '#FBF5EB', color: '#B8762A' },
-  'Tour Booked':    { bg: '#FBF5EB', color: '#B8762A' },
-  'Toured':         { bg: '#F0EDFC', color: '#5A3DB8' },
-  'Follow-Up':      { bg: '#FBF0EF', color: '#C0504A' },
-  'Hot Lead':       { bg: '#FBF0EF', color: '#C0504A' },
-  'Converted':      { bg: '#EAF2ED', color: '#2D5A3D' },
-}
 
 const AVATAR_COLORS = [
   { bg: '#EBF6F8', color: '#1A5F6E' },
   { bg: '#EAF2ED', color: '#2D5A3D' },
   { bg: '#FBF0EF', color: '#C0504A' },
   { bg: '#FBF5EB', color: '#B8762A' },
-  { bg: '#F0EDFC', color: '#5A3DB8' },
+  { bg: '#FBF3E4', color: '#9A6A1F' },
 ]
 
 // What the import will do with each leadsheet guest, compared with guests
@@ -395,7 +385,7 @@ export function ImportScreen({ onImport, onUpdate, guests = [] }) {
                         const h = planFor(g, guests)
                         if (h.kind === 'skip') return <span style={{ color: 'var(--ink3)', fontWeight: 500 }}><i className="ti ti-copy" /> Skip: already imported</span>
                         if (h.kind === 'merge') return <span style={{ color: '#1A5F6E', fontWeight: 500 }}><i className="ti ti-link" /> Merge: extends their stay to {g.depart_date}</span>
-                        if (h.returning) return <span style={{ color: '#5A3DB8', fontWeight: 500 }}><i className="ti ti-refresh" /> Returning · last {weekTag(h.returning)}: {h.returning.status}{h.returning.outcome === 'lost' ? ', no deal' : ''}</span>
+                        if (h.returning) return <span style={{ color: '#9A6A1F', fontWeight: 500 }}><i className="ti ti-refresh" /> Returning · last {weekTag(h.returning)}: {h.returning.status}{h.returning.outcome === 'lost' ? ', no deal' : ''}</span>
                         return null
                       })()}
                       {g.member_number && <span>#{g.member_number}</span>}

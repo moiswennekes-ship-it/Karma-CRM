@@ -1,18 +1,27 @@
 import React, { useState } from 'react'
 
 // ── STATUS CONFIG ─────────────────────────────────────────────
+// Four colour families: new (ocean), in progress (gold), hot (coral),
+// closed (green = won, grey = gone). Every screen uses this one table.
+const FAMILY = {
+  new:      { bg: '#EBF6F8', color: '#1A5F6E' },
+  progress: { bg: '#FBF3E4', color: '#9A6A1F' },
+  hot:      { bg: '#FBEDEB', color: '#B5443E' },
+  won:      { bg: '#EAF2ED', color: '#2D5A3D' },
+  gone:     { bg: '#F1F0EC', color: '#8A8A8E' },
+}
 export const STATUS_CFG = {
-  'Arriving Soon':  { bg: '#EBF6F8', color: '#1A5F6E' },
-  'Contacted':      { bg: '#F3F2EE', color: '#6E6E73' },
-  'Responded':      { bg: '#FBF5EB', color: '#B8762A' },
-  'Meeting Booked': { bg: '#FBF5EB', color: '#B8762A' },
-  'Tour Booked':    { bg: '#FBF5EB', color: '#B8762A' },
-  'Toured':         { bg: '#F0EDFC', color: '#5A3DB8' },
-  'Follow-Up':      { bg: '#FBF0EF', color: '#C0504A' },
-  'Hot Lead':       { bg: '#FBF0EF', color: '#C0504A' },
-  'Proposal Sent':  { bg: '#EAF2ED', color: '#2D5A3D' },
-  'Converted':      { bg: '#EAF2ED', color: '#2D5A3D' },
-  'Departed':       { bg: '#F0F0F0', color: '#888888' },
+  'Arriving Soon':  FAMILY.new,
+  'Contacted':      FAMILY.new,
+  'Responded':      FAMILY.progress,
+  'Meeting Booked': FAMILY.progress,
+  'Tour Booked':    FAMILY.progress,
+  'Toured':         FAMILY.progress,
+  'Follow-Up':      FAMILY.progress,
+  'Hot Lead':       FAMILY.hot,
+  'Proposal Sent':  FAMILY.hot,
+  'Converted':      FAMILY.won,
+  'Departed':       FAMILY.gone,
 }
 
 export const AVATAR_COLORS = [
@@ -49,7 +58,7 @@ export function StatusPill({ status }) {
   return (
     <span style={{
       padding: '3px 10px', borderRadius: 20,
-      fontSize: 10.5, fontWeight: 500, whiteSpace: 'nowrap',
+      fontSize: 11.5, fontWeight: 500, whiteSpace: 'nowrap',
       background: sc.bg, color: sc.color,
     }}>
       {status}
