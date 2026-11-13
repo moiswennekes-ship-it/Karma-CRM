@@ -60,7 +60,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
       }
       setBooking(null)
     } catch (e) {
-      setErr(e.message)
+      setErr(/tour_at/.test(e.message || '') ? 'Tour booking needs a one-time database update. Ask Claude to run it.' : e.message)
     } finally {
       setSaving(false)
     }

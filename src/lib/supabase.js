@@ -17,11 +17,13 @@ export async function getGuests() {
 }
 
 export async function createGuest(guest) {
-  const { data, error } = await supabase
-    .from('guests')
-    .insert([guest])
-    .select()
-    .single()
+  const insert = row => supabase.from('guests').insert([row]).select().single()
+  let { data, error } = await insert(guest)
+  // If the database doesn't have the tour column yet, save the guest without it
+  if (error && /tour_at/.test(error.message || '')) {
+    const { tour_at, ...rest } = guest
+    ;({ data, error } = await insert(rest))
+  }
   if (error) throw error
   return data
 }
