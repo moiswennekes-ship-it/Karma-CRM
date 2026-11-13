@@ -13,6 +13,8 @@ const TYPE_ICON = {
 
 export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, onDelete, onEdit }) {
   const [activity, setActivity] = useState([])
+  // Only what Mois logged himself (WhatsApp, notes, meetings...), not automatic stage changes
+  const logged = activity.filter(a => a.type !== 'status_change')
   const [note, setNote] = useState('')
   const [noteType, setNoteType] = useState('note')
   const [saving, setSaving] = useState(false)
@@ -175,7 +177,7 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
 
       {/* Ask Guru */}
       <div style={{ marginBottom: 16 }}>
-        <AskGuru guest={guest} activity={activity} compact />
+        <AskGuru guest={guest} activity={logged} compact />
       </div>
 
       {/* Activity timeline */}
@@ -203,8 +205,8 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
           <i className="ti ti-plus" /> {saving ? 'Saving...' : 'Add to activity'}
         </Btn>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {activity.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink4)' }}>Nothing logged yet.</div>}
-          {activity.map(a => (
+          {logged.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink4)' }}>Nothing logged yet.</div>}
+          {logged.map(a => (
             <div key={a.id} style={{ display: 'flex', gap: 8, fontSize: 12 }}>
               <i className={`ti ${TYPE_ICON[a.type] || 'ti-point'}`} style={{ color: 'var(--ocean)', fontSize: 14, marginTop: 1 }} />
               <div style={{ flex: 1 }}>
