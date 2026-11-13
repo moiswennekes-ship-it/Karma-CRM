@@ -349,3 +349,57 @@ create policy "staff_select" on staff for select using (auth.role() = 'authentic
 -- individual, so authenticated-only (not per-rep) is correct.
 drop policy if exists "Allow all for authenticated" on weeks;
 create policy "weeks_all" on weeks for all using (auth.role() = 'authenticated');
+
+-- ── PHASE 2–4 MIGRATION (Nov 2026) ─────────────────────────
+-- Seven stages: fold Responded into Contacted, Proposal Sent into Hot Lead
+update guests set status = 'Contacted' where status = 'Responded';
+update guests set status = 'Hot Lead'  where status = 'Proposal Sent';
+
+-- Win/loss tracking
+alter table guests add column if not exists outcome text;          -- 'won' | 'lost'
+alter table guests add column if not exists outcome_reason text;
+
+-- Karma Brain: the only product/price facts the AI may quote
+create table if not exists products (
+  id             uuid primary key default uuid_generate_v4(),
+  created_at     timestamptz default now(),
+  name           text not null,
+  category       text not null default 'Other',     -- Discovery | Points | Fractional | Other
+  summary        text,
+  price_text     text,
+  terms          text,
+  source_tier    text not null default 'unverified', -- official | internal | personal | unverified
+  effective_date date,
+  verify         boolean not null default true,
+  active         boolean not null default true
+);
+alter table products enable row level security;
+drop policy if exists products_read on products;
+create policy products_read on products for select using (auth.role() = 'authenticated');
+drop policy if exists products_write on products;
+create policy products_write on products for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+-- Lessons: what worked / failed, read by the AI before every answer
+create table if not exists lessons (
+  id              uuid primary key default uuid_generate_v4(),
+  created_at      timestamptz default now(),
+  staff_id        uuid references staff(id) on delete cascade default public.my_staff_id(),
+  kind            text not null default 'lesson',   -- objection | strategy | success | failure | lesson
+  content         text not null,
+  guest_id        uuid references guests(id) on delete set null,
+  source_question text
+);
+alter table lessons enable row level security;
+drop policy if exists lessons_select on lessons;
+create policy lessons_select on lessons for select using (staff_id = public.my_staff_id() or public.is_manager());
+drop policy if exists lessons_insert on lessons;
+create policy lessons_insert on lessons for insert with check (staff_id = public.my_staff_id());
+drop policy if exists lessons_update on lessons;
+create policy lessons_update on lessons for update using (staff_id = public.my_staff_id());
+drop policy if exists lessons_delete on lessons;
+create policy lessons_delete on lessons for delete using (staff_id = public.my_staff_id());
+
+-- Remove the demo staff record left from the template (no login attached)
+delete from staff s where s.user_id is null and s.email = 'james.reid@karma.com'
+  and not exists (select 1 from guests g where g.assigned_to = s.id);
+alter table interactions alter column staff_name drop default;

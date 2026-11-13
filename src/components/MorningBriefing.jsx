@@ -18,7 +18,7 @@ export function MorningBriefing({ guests }) {
   const notContacted = activeGuests.filter(g => g.status === 'Arriving Soon' && !(g.linked_stay || '').toLowerCase().includes('2nd'))
   const followUps = activeGuests.filter(g => g.status === 'Follow-Up')
   const meetingsToday = activeGuests.filter(g => g.status === 'Meeting Booked')
-  const hotLeads = activeGuests.filter(g => ['Hot Lead', 'Proposal Sent'].includes(g.status))
+  const hotLeads = activeGuests.filter(g => g.status === 'Hot Lead')
   const leavingSoon = inHouse.filter(g =>
     isLeavingSoon(g.depart_date, 2) && g.status !== 'Converted'
   )
@@ -40,7 +40,7 @@ Current pipeline (active guests only — departed guests excluded):
 - ${notContacted.length} guests not yet contacted: ${notContacted.map(g => g.name).join(', ') || 'none'}
 - ${followUps.length} guests needing follow-up: ${followUps.map(g => g.name).join(', ') || 'none'}
 - ${meetingsToday.length} meetings booked: ${meetingsToday.map(g => g.name).join(', ') || 'none'}
-- ${hotLeads.length} hot leads: ${hotLeads.map(g => `${g.name} (${g.upgrade_score}%)`).join(', ') || 'none'}
+- ${hotLeads.length} hot leads: ${hotLeads.map(g => g.name).join(', ') || 'none'}
 - ${leavingSoon.length} high-value guests leaving in 2 days or less: ${leavingSoon.map(g => `${g.name} (${daysUntilDeparture(g.depart_date)} days left)`).join(', ') || 'none'}
 - ${departed.length} guests have already departed
 
@@ -193,7 +193,7 @@ Keep it under 200 words. Sound like a knowledgeable colleague, not a robot.`
             {hotLeads.length > 0 && (
               <div style={{ background: 'rgba(255,209,102,.15)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#FFD166' }}>
                 <span>🔥 Hot leads: </span>
-                {hotLeads.map(g => `${g.name} (${g.upgrade_score}%)`).join(', ')}
+                {hotLeads.map(g => g.name).join(', ')}
               </div>
             )}
           </div>

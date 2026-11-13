@@ -235,15 +235,20 @@ export function ImportScreen({ onImport }) {
   const handleImport = async () => {
     if (!parsed?.length) return
     setImporting(true)
+    let current = null
+    let count = 0
     try {
       for (const guest of parsed) {
+        current = guest.name
         await onImport(guest)
+        count++
       }
       setDone(true)
       setText('')
       setParsed(null)
     } catch(e) {
-      setError('Import failed. Please try again.')
+      setError(`Import stopped at ${current || 'the first guest'} (${count} of ${parsed.length} imported). Reason: ${e.message || 'unknown error'}`)
+      setParsed(parsed.slice(count))
     } finally {
       setImporting(false)
     }

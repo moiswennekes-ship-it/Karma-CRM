@@ -21,7 +21,8 @@ export const AVATAR_COLORS = [
   { bg: '#F0EDFC', color: '#5A3DB8' },
 ]
 
-export const ALL_STATUSES = ['Arriving Soon', 'Contacted', 'Responded', 'Meeting Booked', 'Follow-Up', 'Hot Lead', 'Proposal Sent', 'Converted', 'Departed']
+// Seven stages. ("Responded" folded into Contacted, "Proposal Sent" into Hot Lead.)
+export const ALL_STATUSES = ['Arriving Soon', 'Contacted', 'Meeting Booked', 'Follow-Up', 'Hot Lead', 'Converted', 'Departed']
 
 // ── AVATAR ────────────────────────────────────────────────────
 export function Avatar({ initials, colorIndex = 0, size = 40 }) {

@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Btn, FieldInput, FieldSelect, FieldTextarea, FieldLabel } from './UI'
+import { Modal, Btn, FieldInput, FieldSelect, FieldTextarea, FieldLabel, ALL_STATUSES } from './UI'
 
 const MEMBER_TYPES = [
   'Legacy Member', 'Standard Member', 'Premium Member',
   'Fractional Owner', 'Entry Member', 'KC Member', 'Prospective',
 ]
 
-const STATUSES = [
-  'Arriving Soon', 'Contacted', 'Responded', 'Meeting Booked',
-  'Follow-Up', 'Hot Lead', 'Proposal Sent', 'Converted',
-]
+const STATUSES = ALL_STATUSES
 
 export function EditGuestModal({ guest, open, onClose, onSave }) {
   const [form, setForm] = useState({})

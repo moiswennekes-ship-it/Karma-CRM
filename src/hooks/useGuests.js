@@ -9,7 +9,7 @@ import {
 } from '../lib/supabase'
 import { hasLeft, isToday } from '../lib/dates'
 
-export function useGuests(assignedTo) {
+export function useGuests(assignedTo, staffName) {
   const [guests, setGuests] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -91,11 +91,12 @@ export function useGuests(assignedTo) {
       await logInteraction({
         guest_id: id,
         type: 'status_change',
-        content: `Status updated to: ${updates.status}`,
-      })
+        content: `Stage changed to ${updates.status}`,
+        staff_name: staffName || null,
+      }).catch(() => {})
     }
     return updated
-  }, [])
+  }, [staffName])
 
   // Update status specifically
   const updateStatus = useCallback(async (id, status) => {
@@ -120,7 +121,7 @@ export function useGuests(assignedTo) {
     arriving: guests.filter(g => g.status === 'Arriving Soon').length,
     contacted: guests.filter(g => g.status === 'Contacted').length,
     meetingBooked: guests.filter(g => g.status === 'Meeting Booked').length,
-    hotLead: guests.filter(g => ['Hot Lead', 'Proposal Sent'].includes(g.status)).length,
+    hotLead: guests.filter(g => g.status === 'Hot Lead').length,
     converted: guests.filter(g => g.status === 'Converted').length,
     followUp: guests.filter(g => g.status === 'Follow-Up').length,
   }
@@ -131,7 +132,7 @@ export function useGuests(assignedTo) {
   )
 
   // Computed: hot leads (score >= 65)
-  const hotLeads = guests.filter(g => ['Hot Lead', 'Proposal Sent'].includes(g.status))
+  const hotLeads = guests.filter(g => g.status === 'Hot Lead')
 
   return {
     guests,
