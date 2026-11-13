@@ -3,6 +3,7 @@ import { useGuests } from './hooks/useGuests'
 import { useAuth } from './hooks/useAuth'
 import { useIsMobile } from './hooks/useIsMobile'
 import { supabase } from './lib/supabase'
+import { karmaWeek, karmaWeekRange } from './lib/dates'
 import { DashboardScreen } from './screens/Dashboard'
 import { GuestsScreen } from './screens/Guests'
 import { CoachScreen, Tabs } from './screens/Coach'
@@ -82,19 +83,39 @@ export default function App() {
   const isMobile = useIsMobile()
   const [screen, setScreen] = useState('today')
   const [addOpen, setAddOpen] = useState(false)
-  const [currentWeek, setCurrentWeek] = useState(null)
+  const [currentWeek, setCurrentWeek] = useState(karmaWeek())
   const [editingGuest, setEditingGuest] = useState(null)
 
-  // The current week lives in the database (the active row in `weeks`),
-  // so it survives reloads.
+  // Karma weeks run Saturday to Friday and the number comes from the date,
+  // so it flips by itself at midnight on Saturday (Bali time).
+  useEffect(() => {
+    const t = setInterval(() => setCurrentWeek(karmaWeek()), 60 * 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  // Keep the weeks table in step: archive earlier weeks with their totals
+  // and make sure this week has a row.
   useEffect(() => {
     if (!session) return
-    supabase.from('weeks').select('week_number,status').order('week_number', { ascending: false })
-      .then(({ data }) => {
-        const active = (data || []).find(w => w.status === 'active') || (data || [])[0]
-        setCurrentWeek(active ? active.week_number : 1)
-      })
-  }, [session])
+    ;(async () => {
+      const { data: weeks } = await supabase.from('weeks').select('*')
+      for (const w of (weeks || []).filter(w => w.status === 'active' && w.week_number !== currentWeek)) {
+        const { data: wg } = await supabase.from('guests').select('status').eq('week_number', w.week_number)
+        await supabase.from('weeks').update({
+          status: 'archived',
+          guest_count: (wg || []).length,
+          toured_count: (wg || []).filter(g => ['Meeting Booked', 'Contacted', 'Follow-Up', 'Hot Lead', 'Converted'].includes(g.status)).length,
+          converted_count: (wg || []).filter(g => g.status === 'Converted').length,
+        }).eq('week_number', w.week_number)
+      }
+      if (!(weeks || []).some(w => w.week_number === currentWeek)) {
+        const { start, end } = karmaWeekRange()
+        await supabase.from('weeks').insert([{ week_number: currentWeek, week_label: `Week ${currentWeek}`, start_date: start, end_date: end, status: 'active' }])
+      } else {
+        await supabase.from('weeks').update({ status: 'active' }).eq('week_number', currentWeek)
+      }
+    })().catch(() => {})
+  }, [session, currentWeek])
 
   if (authLoading) {
     return (
@@ -206,11 +227,11 @@ export default function App() {
             {screen === 'today'  && <DashboardScreen guests={guests} isMobile={isMobile} {...profileProps} />}
             {screen === 'guests' && <GuestsScreen guests={guests} isMobile={isMobile} {...profileProps} />}
             {screen === 'coach'  && <CoachScreen guests={guests} />}
-            {screen === 'import' && currentWeek !== null && (
+            {screen === 'import' && (
               <ImportHub
                 currentWeek={currentWeek}
                 onImport={(g) => addGuest({ ...g, week_number: currentWeek, week_label: `Week ${currentWeek}` })}
-                onStartNewWeek={(wk) => { setCurrentWeek(wk); reload(); setScreen('today') }}
+                onStartNewWeek={() => { reload(); setScreen('today') }}
               />
             )}
             {screen === 'tools'  && <ToolsHub guests={guests} addGuest={addGuest} onGoToGuest={() => setScreen('guests')} />}
