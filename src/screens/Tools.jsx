@@ -81,9 +81,6 @@ export function ObjectionScreen() {
 export function CalculatorScreen() {
   const [points, setPoints] = useState(231)
   const [inflation, setInflation] = useState(6.8)
-  const [stays, setStays] = useState(1)
-  const [nights, setNights] = useState(7)
-  const [hotelRate, setHotelRate] = useState(650)
   const [endYear, setEndYear] = useState(2045)
   const [biAnnual, setBiAnnual] = useState(false)
   const [biOdd, setBiOdd] = useState(true)
@@ -96,12 +93,11 @@ export function CalculatorScreen() {
   const rows = []
   for (let y = 1; y <= totalYears; y++) {
     const yFee = Math.round(fee * Math.pow(1 + inflation / 100, y - 1))
-    const hVal = Math.round(hotelRate * nights * stays)
     const calYear = currentYear + y
     const isBiYear = biOdd ? calYear % 2 === 1 : calYear % 2 === 0
     totalFull += yFee
     if (isBiYear) totalBi += yFee
-    rows.push({ year: y, calYear, fee: yFee, hotel: hVal, isBiYear })
+    rows.push({ year: y, calYear, fee: yFee, isBiYear })
   }
 
   const fmt = (n) => '$' + Math.round(n).toLocaleString()
@@ -139,9 +135,6 @@ export function CalculatorScreen() {
                 ))}
               </div>
             )}
-            <SliderField label="Stays Per Year" value={stays} min={0} max={8} onChange={setStays} />
-            <SliderField label="Nights Per Stay" value={nights} min={1} max={21} onChange={setNights} />
-            <SliderField label="Hotel Equivalent Rate" value={hotelRate} min={100} max={2500} step={50} onChange={setHotelRate} format={v => '$' + v + '/night'} />
           </CardBody>
         </Card>
 
@@ -166,7 +159,6 @@ export function CalculatorScreen() {
                 <div key={r.year} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 12.5, opacity: biAnnual && !r.isBiYear ? 0.3 : 1 }}>
                   <span style={{ color: 'var(--ink3)' }}>{r.calYear}</span>
                   <span style={{ fontWeight: 500 }}>{biAnnual && !r.isBiYear ? '—' : fmt(r.fee)}</span>
-                  <span style={{ fontSize: 11, color: 'var(--palm)' }}>hotel equiv: {fmt(r.hotel)}</span>
                 </div>
               ))}
             </CardBody>
