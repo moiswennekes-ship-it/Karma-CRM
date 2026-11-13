@@ -35,7 +35,7 @@ export function nextAction(g) {
   const arrivalText = `Arrives ${g.arrival_date}${g.nights ? `, ${g.nights} nights` : ''}`
 
   // Instructions from the leadsheet notes come first
-  if (/book this week/.test(notes) && !['Meeting Booked', 'Hot Lead', 'Converted'].includes(g.status)) {
+  if (/book this week/.test(notes) && ['Arriving Soon', 'Contacted'].includes(g.status)) {
     return { score: 92, action: 'Book their tour this week', reason: `Leadsheet: "${g.notes}"`, urgent: true }
   }
   if (/\btoured\b/.test(notes) && ['Arriving Soon', 'Contacted'].includes(g.status)) {
@@ -54,10 +54,15 @@ export function nextAction(g) {
       action = urgent ? 'Close it: book a final sit-down today' : 'Book the meeting and agree a decision date'
       reason = `Hot lead, ${left}`
       break
-    case 'Meeting Booked':
-      score = urgent ? 85 : 70
-      action = 'Prep the meeting: ask Guru for a briefing'
-      reason = `Meeting booked, ${left}`
+    case 'Tour Booked':
+      score = urgent ? 88 : 72
+      action = 'Prep the tour: ask Guru for a briefing'
+      reason = later ? `Tour booked. ${arrivalText}` : `Tour booked, ${left}`
+      break
+    case 'Toured':
+      score = urgent ? 90 : 75
+      action = urgent ? 'Follow up on the tour before they leave' : 'Follow up on the tour'
+      reason = `Toured${g.notes && /toured/i.test(g.notes) ? ` (${g.notes})` : ''}, ${left}`
       break
     case 'Follow-Up':
       score = urgent ? 82 : 60
@@ -67,7 +72,7 @@ export function nextAction(g) {
     case 'Contacted':
       score = urgent ? 65 : 35
       action = urgent ? 'Push for a coffee or tour before they leave' : 'Check in and suggest a coffee or tour'
-      reason = `Contacted, no meeting yet, ${left}`
+      reason = `Contacted, no tour yet, ${left}`
       break
     default: { // Arriving Soon
       if (isSecondWeek(g)) {
@@ -81,10 +86,18 @@ export function nextAction(g) {
         action = 'Make first contact'
         reason = `In house, not contacted yet, ${left}`
       } else {
+        // Welcome email + WhatsApp go out a couple of days before arrival
         const arr = parseKarmaDate(g.arrival_date)
-        score = 15
-        action = 'Prepare the welcome'
-        reason = arr ? `Arrives ${g.arrival_date}` : 'Arriving soon'
+        const toArrival = arr ? Math.round((new Date(arr).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000) : null
+        if (toArrival !== null && toArrival <= 3) {
+          score = toArrival <= 1 ? 70 : 55
+          action = 'Send the welcome email + WhatsApp'
+          reason = `Welcome due: ${arrivalText}`
+        } else if (toArrival !== null && toArrival <= 7) {
+          score = 30; action = 'Welcome email + WhatsApp can go out'; reason = arrivalText
+        } else {
+          score = 10; action = 'Welcome later'; reason = arr ? arrivalText : 'Arriving soon'
+        }
       }
     }
   }

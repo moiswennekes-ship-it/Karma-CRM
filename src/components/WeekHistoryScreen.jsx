@@ -46,6 +46,8 @@ const STATUS_CFG = {
   'Arriving Soon':  { bg: '#EBF6F8', color: '#1A5F6E' },
   'Contacted':      { bg: '#F3F2EE', color: '#6E6E73' },
   'Meeting Booked': { bg: '#FBF5EB', color: '#B8762A' },
+  'Tour Booked':    { bg: '#FBF5EB', color: '#B8762A' },
+  'Toured':         { bg: '#F0EDFC', color: '#5A3DB8' },
   'Follow-Up':      { bg: '#FBF0EF', color: '#C0504A' },
   'Hot Lead':       { bg: '#FBF0EF', color: '#C0504A' },
   'Proposal Sent':  { bg: '#EAF2ED', color: '#2D5A3D' },
@@ -148,7 +150,7 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
         .eq('week_number', currentWeek)
 
       const toured = (currentGuests || []).filter(g =>
-        ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Converted'].includes(g.status)
+        ['Toured','Follow-Up','Hot Lead','Converted'].includes(g.status)
       ).length
       const converted = (currentGuests || []).filter(g => g.status === 'Converted').length
 
@@ -193,13 +195,13 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
   const activeWeek = weeks.find(w => w.status === 'active') || { week_number: currentWeek, week_label: `Week ${currentWeek}`, status: 'active' }
   const pastWeeks = weeks.filter(w => w.status === 'archived')
   const currentGuests = guestsByWeek[currentWeek] || []
-  const currentToured = currentGuests.filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Converted'].includes(g.status)).length
+  const currentToured = currentGuests.filter(g => ['Toured','Follow-Up','Hot Lead','Converted'].includes(g.status)).length
   const currentConverted = currentGuests.filter(g => g.status === 'Converted').length
 
   const WeekRow = ({ week, isCurrent }) => {
     const guests = guestsByWeek[week.week_number] || []
     const isExpanded = expandedWeek === week.week_number
-    const toured = week.toured_count || guests.filter(g => ['Meeting Booked','Hot Lead','Converted'].includes(g.status)).length
+    const toured = week.toured_count || guests.filter(g => ['Toured','Follow-Up','Hot Lead','Converted'].includes(g.status)).length
     const converted = week.converted_count || guests.filter(g => g.status === 'Converted').length
     const guestCount = isCurrent ? currentGuests.length : (week.guest_count || 0)
 

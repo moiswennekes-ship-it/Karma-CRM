@@ -11,7 +11,8 @@ const FILTERS = [
   { key: 'inhouse', label: 'In house' },
   { key: 'leaving', label: 'Leaving soon' },
   { key: 'hot', label: 'Hot leads' },
-  { key: 'meetings', label: 'Meetings' },
+  { key: 'tours', label: 'Tours booked' },
+  { key: 'toured', label: 'Toured' },
 ]
 
 // TODAY: one ranked list of who to work and why.
@@ -25,7 +26,8 @@ export function DashboardScreen({ guests, isMobile, ...profileProps }) {
     if (filter === 'inhouse') return isInHouse(g.arrival_date, g.depart_date)
     if (filter === 'leaving') return isLeavingSoon(g.depart_date, 2) && !hasLeft(g.depart_date)
     if (filter === 'hot') return g.status === 'Hot Lead'
-    if (filter === 'meetings') return g.status === 'Meeting Booked'
+    if (filter === 'tours') return g.status === 'Tour Booked'
+    if (filter === 'toured') return g.status === 'Toured'
     return true
   })
   const selected = guests.find(g => g.id === selectedId)
@@ -34,7 +36,7 @@ export function DashboardScreen({ guests, isMobile, ...profileProps }) {
     ['Arriving today', guests.filter(g => isToday(g.arrival_date)).length],
     ['In house', guests.filter(g => isInHouse(g.arrival_date, g.depart_date)).length],
     ['Hot leads', guests.filter(g => g.status === 'Hot Lead' && !hasLeft(g.depart_date)).length],
-    ['Meetings', guests.filter(g => g.status === 'Meeting Booked' && !hasLeft(g.depart_date)).length],
+    ['Tours booked', guests.filter(g => g.status === 'Tour Booked' && !hasLeft(g.depart_date)).length],
     ['Converted', guests.filter(g => g.status === 'Converted').length],
   ]
 

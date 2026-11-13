@@ -3,7 +3,7 @@ import { useGuests } from './hooks/useGuests'
 import { useAuth } from './hooks/useAuth'
 import { useIsMobile } from './hooks/useIsMobile'
 import { supabase } from './lib/supabase'
-import { karmaWeek, karmaWeekRange } from './lib/dates'
+import { karmaWeek, karmaWeekRange, parseKarmaDate } from './lib/dates'
 import { DashboardScreen } from './screens/Dashboard'
 import { GuestsScreen } from './screens/Guests'
 import { CoachScreen, Tabs } from './screens/Coach'
@@ -41,7 +41,7 @@ function ImportHub({ currentWeek, onImport, onStartNewWeek }) {
   const [tab, setTab] = useState('import')
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
-      <Tabs active={tab} onChange={setTab} tabs={[['import', `Import into Week ${currentWeek}`, 'ti-table-import'], ['weeks', 'Weeks', 'ti-history']]} />
+      <Tabs active={tab} onChange={setTab} tabs={[['import', 'Import leadsheet', 'ti-table-import'], ['weeks', 'Weeks', 'ti-history']]} />
       {tab === 'import' && <ImportScreen onImport={onImport} />}
       {tab === 'weeks' && <WeekHistoryScreen currentWeek={currentWeek} onStartNewWeek={onStartNewWeek} />}
     </div>
@@ -104,7 +104,7 @@ export default function App() {
         await supabase.from('weeks').update({
           status: 'archived',
           guest_count: (wg || []).length,
-          toured_count: (wg || []).filter(g => ['Meeting Booked', 'Contacted', 'Follow-Up', 'Hot Lead', 'Converted'].includes(g.status)).length,
+          toured_count: (wg || []).filter(g => ['Toured', 'Follow-Up', 'Hot Lead', 'Converted'].includes(g.status)).length,
           converted_count: (wg || []).filter(g => g.status === 'Converted').length,
         }).eq('week_number', w.week_number)
       }
@@ -230,7 +230,12 @@ export default function App() {
             {screen === 'import' && (
               <ImportHub
                 currentWeek={currentWeek}
-                onImport={(g) => addGuest({ ...g, week_number: currentWeek, week_label: `Week ${currentWeek}` })}
+                onImport={(g) => {
+                  // File each guest under the Karma week they arrive in, so next
+                  // week's leads imported early land in next week.
+                  const wk = karmaWeek(parseKarmaDate(g.arrival_date) || new Date())
+                  return addGuest({ ...g, week_number: wk, week_label: `Week ${wk}` })
+                }}
                 onStartNewWeek={() => { reload(); setScreen('today') }}
               />
             )}

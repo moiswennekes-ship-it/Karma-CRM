@@ -120,7 +120,8 @@ export function useGuests(assignedTo, staffName) {
   const pipelineCounts = {
     arriving: guests.filter(g => g.status === 'Arriving Soon').length,
     contacted: guests.filter(g => g.status === 'Contacted').length,
-    meetingBooked: guests.filter(g => g.status === 'Meeting Booked').length,
+    tourBooked: guests.filter(g => g.status === 'Tour Booked').length,
+    toured: guests.filter(g => g.status === 'Toured').length,
     hotLead: guests.filter(g => g.status === 'Hot Lead').length,
     converted: guests.filter(g => g.status === 'Converted').length,
     followUp: guests.filter(g => g.status === 'Follow-Up').length,

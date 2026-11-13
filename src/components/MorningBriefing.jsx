@@ -17,7 +17,7 @@ export function MorningBriefing({ guests }) {
   const inHouse = guests.filter(g => isInHouse(g.arrival_date, g.depart_date))
   const notContacted = activeGuests.filter(g => g.status === 'Arriving Soon' && !(g.linked_stay || '').toLowerCase().includes('2nd'))
   const followUps = activeGuests.filter(g => g.status === 'Follow-Up')
-  const meetingsToday = activeGuests.filter(g => g.status === 'Meeting Booked')
+  const meetingsToday = activeGuests.filter(g => g.status === 'Tour Booked')
   const hotLeads = activeGuests.filter(g => g.status === 'Hot Lead')
   const leavingSoon = inHouse.filter(g =>
     isLeavingSoon(g.depart_date, 2) && g.status !== 'Converted'
@@ -39,7 +39,7 @@ Current pipeline (active guests only — departed guests excluded):
 - ${arrivingToday.length} guests arriving today: ${arrivingToday.map(g => g.name).join(', ') || 'none'}
 - ${notContacted.length} guests not yet contacted: ${notContacted.map(g => g.name).join(', ') || 'none'}
 - ${followUps.length} guests needing follow-up: ${followUps.map(g => g.name).join(', ') || 'none'}
-- ${meetingsToday.length} meetings booked: ${meetingsToday.map(g => g.name).join(', ') || 'none'}
+- ${meetingsToday.length} tours booked: ${meetingsToday.map(g => g.name).join(', ') || 'none'}
 - ${hotLeads.length} hot leads: ${hotLeads.map(g => g.name).join(', ') || 'none'}
 - ${leavingSoon.length} high-value guests leaving in 2 days or less: ${leavingSoon.map(g => `${g.name} (${daysUntilDeparture(g.depart_date)} days left)`).join(', ') || 'none'}
 - ${departed.length} guests have already departed

@@ -27,7 +27,7 @@ export function FormattedText({ text }) {
 const GUEST_CHIPS = [
   "What's my next move with this guest?",
   'Write a WhatsApp for them',
-  'Prep me for our meeting',
+  'Prep me for their tour',
   'Which product fits them best, if any?',
 ]
 const GENERAL_CHIPS = [

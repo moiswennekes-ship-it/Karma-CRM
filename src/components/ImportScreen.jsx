@@ -42,8 +42,8 @@ function detectStatus(notes, apptDate, tourCol) {
   const n = (notes || '').toLowerCase()
   const t = (tourCol || '').toLowerCase()
   if (n.includes('no deal') || t.includes('no deal')) return 'Contacted'
-  if (n.includes('toured') || n.includes('be toured')) return 'Contacted'
-  if (apptDate && apptDate.length > 3) return 'Meeting Booked'
+  if (/\btoured\b/.test(n) && !n.includes('be toured')) return 'Toured'
+  if (apptDate && apptDate.length > 3) return 'Tour Booked'
   if (n.includes('on price')) return 'Follow-Up'
   if (n.includes('good shot') || n.includes('cancelled a fractional')) return 'Hot Lead'
   if (n.includes('welcome email') || n.includes('whatsapp sent')) return 'Contacted'
@@ -201,6 +201,8 @@ const STATUS_CFG = {
   'Arriving Soon':  { bg: '#EBF6F8', color: '#1A5F6E' },
   'Contacted':      { bg: '#F3F2EE', color: '#6E6E73' },
   'Meeting Booked': { bg: '#FBF5EB', color: '#B8762A' },
+  'Tour Booked':    { bg: '#FBF5EB', color: '#B8762A' },
+  'Toured':         { bg: '#F0EDFC', color: '#5A3DB8' },
   'Follow-Up':      { bg: '#FBF0EF', color: '#C0504A' },
   'Hot Lead':       { bg: '#FBF0EF', color: '#C0504A' },
   'Converted':      { bg: '#EAF2ED', color: '#2D5A3D' },

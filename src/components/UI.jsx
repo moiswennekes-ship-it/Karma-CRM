@@ -6,6 +6,8 @@ export const STATUS_CFG = {
   'Contacted':      { bg: '#F3F2EE', color: '#6E6E73' },
   'Responded':      { bg: '#FBF5EB', color: '#B8762A' },
   'Meeting Booked': { bg: '#FBF5EB', color: '#B8762A' },
+  'Tour Booked':    { bg: '#FBF5EB', color: '#B8762A' },
+  'Toured':         { bg: '#F0EDFC', color: '#5A3DB8' },
   'Follow-Up':      { bg: '#FBF0EF', color: '#C0504A' },
   'Hot Lead':       { bg: '#FBF0EF', color: '#C0504A' },
   'Proposal Sent':  { bg: '#EAF2ED', color: '#2D5A3D' },
@@ -21,8 +23,10 @@ export const AVATAR_COLORS = [
   { bg: '#F0EDFC', color: '#5A3DB8' },
 ]
 
-// Seven stages. ("Responded" folded into Contacted, "Proposal Sent" into Hot Lead.)
-export const ALL_STATUSES = ['Arriving Soon', 'Contacted', 'Meeting Booked', 'Follow-Up', 'Hot Lead', 'Converted', 'Departed']
+// The pipeline, in order. ("Meeting Booked" became Tour Booked.)
+export const ALL_STATUSES = ['Arriving Soon', 'Contacted', 'Tour Booked', 'Toured', 'Follow-Up', 'Hot Lead', 'Converted', 'Departed']
+// Stages that mean the guest has been toured
+export const TOURED_STATUSES = ['Toured', 'Follow-Up', 'Hot Lead', 'Converted']
 
 // ── AVATAR ────────────────────────────────────────────────────
 export function Avatar({ initials, colorIndex = 0, size = 40 }) {

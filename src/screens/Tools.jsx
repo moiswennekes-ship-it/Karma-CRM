@@ -87,7 +87,7 @@ export function CalculatorScreen() {
   const [biAnnual, setBiAnnual] = useState(false)
   const [biOdd, setBiOdd] = useState(true)
 
-  const fee = Math.round(points * 6.02 + 382)
+  const fee = Math.round(points * 6.32 + 402)
   const currentYear = new Date().getFullYear() - 1
   const totalYears = Math.max(1, endYear - currentYear)
 
@@ -117,7 +117,7 @@ export function CalculatorScreen() {
           <CardHeader title="Inputs" />
           <CardBody>
             <SliderField label="Points" value={points} min={50} max={1000} step={1} onChange={setPoints} format={v => v + ' pts'} />
-            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>Current fee: <strong>${fee.toLocaleString()}</strong> ({points} × $6.02 + $382)</div>
+            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>Current fee: <strong>${fee.toLocaleString()}</strong> ({points} × $6.32 + $402, 2027 fees)</div>
             <SliderField label="Annual Inflation" value={inflation} min={1} max={10} step={0.1} onChange={setInflation} format={v => v + '%'} />
             <FieldLabel>Membership End Year</FieldLabel>
             <FieldInput value={endYear} onChange={v => setEndYear(Number(v))} type="number" />
@@ -188,7 +188,7 @@ export function ComparisonScreen() {
 
   const currentYear = new Date().getFullYear()
   const years = Math.max(1, endYear - currentYear)
-  const cBaseFee = Math.round(cPoints * 6.02 + 382)
+  const cBaseFee = Math.round(cPoints * 6.32 + 402)
 
   let cTotal = 0
   for (let y = 1; y <= years; y++) {
@@ -216,7 +216,7 @@ export function ComparisonScreen() {
           <CardHeader title="Current Membership" />
           <CardBody>
             <SliderField label="Points" value={cPoints} min={50} max={1000} step={1} onChange={setCPoints} format={v => v + ' pts'} />
-            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>Current fee: <strong>${cBaseFee.toLocaleString()}</strong> ({cPoints} × $6.02 + $382)</div>
+            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>Current fee: <strong>${cBaseFee.toLocaleString()}</strong> ({cPoints} × $6.32 + $402, 2027 fees)</div>
             <SliderField label="Annual Inflation" value={cInflation} min={1} max={10} step={0.1} onChange={setCInflation} format={v => v + '%'} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '12px 0' }}>
               <input type="checkbox" checked={cBiAnnual} onChange={e => setCBiAnnual(e.target.checked)} id="cbiannual" />
