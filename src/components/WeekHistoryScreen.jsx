@@ -1,6 +1,46 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Btn, SectionHeader } from './UI'
+import { callClaude } from '../lib/claude'
+
+// AI review of a week: what converted, what didn't and why, patterns to act on.
+function WeeklyReview({ weekNumber }) {
+  const [text, setText] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function run() {
+    setLoading(true); setText('')
+    try {
+      const { data: guests } = await supabase.from('guests').select('*').eq('week_number', weekNumber)
+      const ids = (guests || []).map(g => g.id)
+      const { data: acts } = ids.length
+        ? await supabase.from('interactions').select('guest_id,type,content,created_at').in('guest_id', ids).order('created_at', { ascending: true })
+        : { data: [] }
+      const lines = (guests || []).map(g => {
+        const a = (acts || []).filter(x => x.guest_id === g.id && x.type !== 'status_change').map(x => x.content).slice(-4).join(' | ')
+        return `- ${g.name} (${g.member_type || '?'}, ${g.membership || '?'}): stage ${g.status}${g.outcome ? `, outcome ${g.outcome}${g.outcome_reason ? ` (${g.outcome_reason})` : ''}` : ''}${a ? `. Notes: ${a}` : ''}`
+      }).join('\n')
+      const prompt = `Review Week ${weekNumber} for Mois. Guests this week:\n${lines || '- none'}\n\nWrite a short weekly review:\n1. The numbers in one line (guests, meetings, conversions, no-deals).\n2. What worked, with the guest names it worked on.\n3. Why deals were lost, and any pattern across them.\n4. Two specific things to do differently next week.\n5. Any guest still worth a follow-up after their stay.\nPlain text, under 250 words. Be honest, not cheerleading.`
+      setText(await callClaude(prompt, 900))
+    } catch (e) {
+      setText('Could not write the review: ' + e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg, var(--ocean-light), var(--palm-light))', border: '1px solid rgba(26,95,110,.18)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ocean)', textTransform: 'uppercase', letterSpacing: 1.2 }}>
+          <i className="ti ti-sparkles" /> Week {weekNumber} review
+        </div>
+        <Btn size="sm" onClick={run} disabled={loading}>{loading ? 'Reviewing...' : text ? 'Refresh' : 'Review my week'}</Btn>
+      </div>
+      {text && <div style={{ marginTop: 10, fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--ink2)' }}>{text}</div>}
+    </div>
+  )
+}
 
 const STATUS_CFG = {
   'Arriving Soon':  { bg: '#EBF6F8', color: '#1A5F6E' },
@@ -42,7 +82,6 @@ function GuestCard({ g, i }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
         <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10.5, fontWeight: 500, background: sc.bg, color: sc.color }}>{g.status}</span>
-        {g.upgrade_score > 0 && <div style={{ fontSize: 11, color: '#2D5A3D' }}>↑ {g.upgrade_score}%</div>}
       </div>
     </div>
   )
@@ -109,7 +148,7 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
         .eq('week_number', currentWeek)
 
       const toured = (currentGuests || []).filter(g =>
-        ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Proposal Sent','Converted'].includes(g.status)
+        ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Converted'].includes(g.status)
       ).length
       const converted = (currentGuests || []).filter(g => g.status === 'Converted').length
 
@@ -154,13 +193,13 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
   const activeWeek = weeks.find(w => w.status === 'active') || { week_number: currentWeek, week_label: `Week ${currentWeek}`, status: 'active' }
   const pastWeeks = weeks.filter(w => w.status === 'archived')
   const currentGuests = guestsByWeek[currentWeek] || []
-  const currentToured = currentGuests.filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length
+  const currentToured = currentGuests.filter(g => ['Meeting Booked','Contacted','Follow-Up','Hot Lead','Converted'].includes(g.status)).length
   const currentConverted = currentGuests.filter(g => g.status === 'Converted').length
 
   const WeekRow = ({ week, isCurrent }) => {
     const guests = guestsByWeek[week.week_number] || []
     const isExpanded = expandedWeek === week.week_number
-    const toured = week.toured_count || guests.filter(g => ['Meeting Booked','Hot Lead','Proposal Sent','Converted'].includes(g.status)).length
+    const toured = week.toured_count || guests.filter(g => ['Meeting Booked','Hot Lead','Converted'].includes(g.status)).length
     const converted = week.converted_count || guests.filter(g => g.status === 'Converted').length
     const guestCount = isCurrent ? currentGuests.length : (week.guest_count || 0)
 
@@ -232,6 +271,7 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
 
   return (
     <div style={{ overflowY: 'auto', padding: 22, flex: 1 }}>
+      <WeeklyReview weekNumber={currentWeek} />
       <SectionHeader title="Week History" right={
         <Btn variant="ocean" size="sm" onClick={() => { setShowModal(true); setConfirmArchive(false) }}>
           <i className="ti ti-calendar-plus" /> Start New Week
