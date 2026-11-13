@@ -273,9 +273,9 @@ export function WeekHistoryScreen({ currentWeek, onStartNewWeek }) {
     <div style={{ overflowY: 'auto', padding: 22, flex: 1 }}>
       <WeeklyReview weekNumber={currentWeek} />
       <SectionHeader title="Week History" right={
-        <Btn variant="ocean" size="sm" onClick={() => { setShowModal(true); setConfirmArchive(false) }}>
-          <i className="ti ti-calendar-plus" /> Start New Week
-        </Btn>
+        <span style={{ fontSize: 11, color: 'var(--ink3)' }}>
+          <i className="ti ti-calendar-repeat" /> New week starts automatically every Saturday
+        </span>
       } />
 
       {/* START NEW WEEK MODAL */}
