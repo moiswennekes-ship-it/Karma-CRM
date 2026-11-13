@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { stayKey, to24h, tourIso } from '../lib/dates'
-import { pastStaysFor, stayKind, weekTag } from '../lib/history'
+import { pastStaysFor, weekTag } from '../lib/history'
 import { Btn, Card, CardHeader, CardBody, SectionHeader } from './UI'
 
 // ── COLUMN MAP (0-based) ──────────────────────────────────────
@@ -220,22 +220,35 @@ const AVATAR_COLORS = [
   { bg: '#F0EDFC', color: '#5A3DB8' },
 ]
 
-// Earlier stays / already-imported check for a guest in the preview.
-function historyTag(g, guests) {
-  if (!g.member_number || !guests?.length) return null
-  const num = String(g.member_number).trim().toLowerCase()
-  const same = guests.filter(x => String(x.member_number || '').trim().toLowerCase() === num)
-  if (same.some(x => x.arrival_date === g.arrival_date)) return { kind: 'dupe' }
+// What the import will do with each leadsheet guest, compared with guests
+// already in the CRM (matched on member number, or name if there's none):
+//  skip    same booking already imported (leadsheet notes refreshed if changed)
+//  merge   next booking starts when their current stay ends: extend that stay
+//  new     add as a new guest (tagged 'returning' if they've stayed before)
+const norm = v => String(v || '').trim().toLowerCase()
+const dayDiff = (a, b) => {
+  const t = k => { const [y, m, d] = k.split('-').map(Number); return Date.UTC(y, m - 1, d) }
+  return Math.round((t(b) - t(a)) / 86400000)
+}
+export function planFor(g, guests) {
+  const same = guests.filter(x => g.member_number
+    ? norm(x.member_number) === norm(g.member_number)
+    : norm(x.name) === norm(g.name))
+  const arr = stayKey(g.arrival_date)
+  if (!same.length || !arr) return { kind: 'new' }
+  const dupe = same.find(x => stayKey(x.arrival_date) === arr)
+  if (dupe) return { kind: 'skip', target: dupe }
+  const cont = same.find(x => { const dep = stayKey(x.depart_date); return dep && Math.abs(dayDiff(dep, arr)) <= 1 })
+  if (cont) return { kind: 'merge', target: cont }
   const past = pastStaysFor({ ...g, id: '__preview', created_at: '9999' }, guests)
-  if (!past.length) return null
-  return { kind: stayKind(g, past), last: past[0] }
+  return past.length ? { kind: 'new', returning: past[0] } : { kind: 'new' }
 }
 
-export function ImportScreen({ onImport, guests = [] }) {
+export function ImportScreen({ onImport, onUpdate, guests = [] }) {
   const [text, setText] = useState('')
   const [parsed, setParsed] = useState(null)
   const [importing, setImporting] = useState(false)
-  const [done, setDone] = useState(false)
+  const [done, setDone] = useState(null)
   const [error, setError] = useState(null)
 
   const handleParse = () => {
@@ -243,7 +256,7 @@ export function ImportScreen({ onImport, guests = [] }) {
     try {
       const guests = parseLeadsheet(text)
       setParsed(guests)
-      setDone(false)
+      setDone(null)
     } catch(e) {
       setError('Could not parse. Make sure you copied the guest rows from Google Sheets.')
     }
@@ -254,13 +267,33 @@ export function ImportScreen({ onImport, guests = [] }) {
     setImporting(true)
     let current = null
     let count = 0
+    const tally = { added: 0, merged: 0, skipped: 0 }
     try {
       for (const guest of parsed) {
         current = guest.name
-        await onImport(guest)
+        const plan = planFor(guest, guests)
+        if (plan.kind === 'skip') {
+          // Same booking: only refresh the leadsheet notes, keep stage and activity
+          if (onUpdate && guest.notes && guest.notes !== plan.target.notes) await onUpdate(plan.target.id, { notes: guest.notes })
+          tally.skipped++
+        } else if (plan.kind === 'merge' && onUpdate) {
+          const t = plan.target
+          const a = stayKey(t.arrival_date), d = stayKey(guest.depart_date)
+          const bookings = [...new Set([t.booking_numbers, guest.booking_numbers].join(', ').split(/,\s*/).filter(Boolean))].join(', ')
+          await onUpdate(t.id, {
+            depart_date: guest.depart_date,
+            nights: a && d ? dayDiff(a, d) : t.nights,
+            booking_numbers: bookings,
+            ...(guest.notes && guest.notes !== t.notes ? { notes: guest.notes } : {}),
+          })
+          tally.merged++
+        } else {
+          await onImport(guest)
+          tally.added++
+        }
         count++
       }
-      setDone(true)
+      setDone(tally)
       setText('')
       setParsed(null)
     } catch(e) {
@@ -283,7 +316,9 @@ export function ImportScreen({ onImport, guests = [] }) {
           <i className="ti ti-check" style={{ color: 'var(--palm)', fontSize: 20 }} />
           <div>
             <div style={{ fontWeight: 500, color: 'var(--palm)' }}>Import complete!</div>
-            <div style={{ fontSize: 12, color: 'var(--ink3)' }}>All guests added to your pipeline. Go to Dashboard to see them.</div>
+            <div style={{ fontSize: 12, color: 'var(--ink3)' }}>
+              {done.added} added{done.merged ? `, ${done.merged} merged into their current stay` : ''}{done.skipped ? `, ${done.skipped} already in (skipped)` : ''}.
+            </div>
           </div>
         </div>
       )}
@@ -328,7 +363,11 @@ export function ImportScreen({ onImport, guests = [] }) {
                 <i className="ti ti-arrow-left" /> Back
               </Btn>
               <Btn variant="ocean" onClick={handleImport} disabled={importing}>
-                <i className="ti ti-upload" /> {importing ? 'Importing...' : `Import All ${parsed.length} Guests`}
+                <i className="ti ti-upload" /> {importing ? 'Importing...' : (() => {
+                  const plans = parsed.map(g => planFor(g, guests).kind)
+                  const n = k => plans.filter(x => x === k).length
+                  return `Import: ${n('new')} new${n('merge') ? `, ${n('merge')} merge` : ''}${n('skip') ? `, ${n('skip')} skip` : ''}`
+                })()}
               </Btn>
             </div>
           </div>
@@ -353,11 +392,11 @@ export function ImportScreen({ onImport, guests = [] }) {
                     <div style={{ fontWeight: 500, fontSize: 13.5, marginBottom: 3 }}>{g.name}</div>
                     <div style={{ fontSize: 11.5, color: 'var(--ink3)', display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                       {(() => {
-                        const h = historyTag(g, guests)
-                        if (!h) return null
-                        if (h.kind === 'dupe') return <span style={{ color: 'var(--rose)', fontWeight: 500 }}><i className="ti ti-copy" /> Already imported</span>
-                        if (h.kind === 'continuing') return <span style={{ color: '#1A5F6E', fontWeight: 500 }}><i className="ti ti-link" /> Continuing stay</span>
-                        return <span style={{ color: '#5A3DB8', fontWeight: 500 }}><i className="ti ti-refresh" /> Returning · last {weekTag(h.last)}: {h.last.status}{h.last.outcome === 'lost' ? ', no deal' : ''}</span>
+                        const h = planFor(g, guests)
+                        if (h.kind === 'skip') return <span style={{ color: 'var(--ink3)', fontWeight: 500 }}><i className="ti ti-copy" /> Skip: already imported</span>
+                        if (h.kind === 'merge') return <span style={{ color: '#1A5F6E', fontWeight: 500 }}><i className="ti ti-link" /> Merge: extends their stay to {g.depart_date}</span>
+                        if (h.returning) return <span style={{ color: '#5A3DB8', fontWeight: 500 }}><i className="ti ti-refresh" /> Returning · last {weekTag(h.returning)}: {h.returning.status}{h.returning.outcome === 'lost' ? ', no deal' : ''}</span>
+                        return null
                       })()}
                       {g.member_number && <span>#{g.member_number}</span>}
                       {g.room && <span>· Rm {g.room}</span>}

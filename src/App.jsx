@@ -41,12 +41,12 @@ const SCREEN_META = {
   team:   { title: 'Team', sub: "Each rep's pipeline" },
 }
 
-function ImportHub({ currentWeek, currentYear, guests, onImport, onStartNewWeek, onOpenGuest }) {
+function ImportHub({ currentWeek, currentYear, guests, onImport, onUpdate, onStartNewWeek, onOpenGuest }) {
   const [tab, setTab] = useState('import')
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
       <Tabs active={tab} onChange={setTab} tabs={[['import', 'Import leadsheet', 'ti-table-import'], ['weeks', 'Weeks', 'ti-history']]} />
-      {tab === 'import' && <ImportScreen onImport={onImport} guests={guests} />}
+      {tab === 'import' && <ImportScreen onImport={onImport} onUpdate={onUpdate} guests={guests} />}
       {tab === 'weeks' && <WeekHistoryScreen currentWeek={currentWeek} currentYear={currentYear} onStartNewWeek={onStartNewWeek} onOpenGuest={onOpenGuest} />}
     </div>
   )
@@ -245,6 +245,7 @@ export default function App() {
                 currentWeek={currentWeek}
                 currentYear={currentYear}
                 guests={guests}
+                onUpdate={editGuest}
                 onOpenGuest={(id) => { setFocusGuestId(id); setScreen('guests') }}
                 onImport={(g) => {
                   // File each guest under the Karma week they arrive in, so next
