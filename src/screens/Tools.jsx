@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Btn, AIOutputBox, FieldInput, FieldTextarea, FieldSelect, FieldLabel, SliderField, Card, CardHeader, CardBody, SectionHeader } from '../components/UI'
 import { useAI } from '../hooks/useAI'
 import { saveObjectionResponse } from '../lib/supabase'
+import { FRACTIONAL_PACKAGES } from '../lib/pointsPassportConfig'
 
 // ── OBJECTION HANDLER ─────────────────────────────────────────
 const PRESET_OBJECTIONS = [
@@ -184,6 +185,7 @@ export function ComparisonScreen() {
   const [fPrice, setFPrice] = useState(45000)
   const [fExit, setFExit] = useState(52000)
   const [endYear, setEndYear] = useState(2042)
+  const [fShareId, setFShareId] = useState('frac-1bed-full')
 
   const currentYear = new Date().getFullYear()
   const years = Math.max(1, endYear - currentYear)
@@ -199,6 +201,15 @@ export function ComparisonScreen() {
   // Fractional ownership has no yearly maintenance fees
   const fTotal = fPrice - fExit
   const saving = cTotal - fTotal
+
+  // Points: membership points vs the fractional share's points
+  const share = FRACTIONAL_PACKAGES.find(f => f.id === fShareId) || FRACTIONAL_PACKAGES[0]
+  const cPtsYear = cBiAnnual ? cPoints / 2 : cPoints
+  const fPtsYear = share.pts
+  const cPtsTotal = Math.round(cPtsYear * years)
+  const fPtsTotal = Math.round(fPtsYear * years)
+  const num = n => Math.round(n).toLocaleString()
+  const perPt = (cost, pts) => pts > 0 ? '$' + (Math.max(0, cost) / pts).toFixed(2) : '—'
   const fmt = (n) => '$' + Math.abs(Math.round(n)).toLocaleString()
 
   return (
@@ -227,6 +238,8 @@ export function ComparisonScreen() {
         <Card style={{ border: '2px solid var(--ocean2)' }}>
           <CardHeader title={<span style={{ color: 'var(--ocean)' }}>Fractional Ownership</span>} />
           <CardBody>
+            <FieldLabel>Fractional share</FieldLabel>
+            <FieldSelect value={fShareId} onChange={setFShareId} options={FRACTIONAL_PACKAGES.map(f => ({ value: f.id, label: `${f.name} (${f.pts} pts)` }))} />
             <FieldLabel>Purchase Price ($)</FieldLabel>
             <FieldInput value={fPrice} onChange={v => setFPrice(Number(v))} type="number" />
             <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>No yearly maintenance fees on fractional ownership.</div>
@@ -235,6 +248,46 @@ export function ComparisonScreen() {
           </CardBody>
         </Card>
       </div>
+
+      <Card style={{ marginBottom: 14 }}>
+        <CardHeader title={`Points comparison to ${endYear} (${years} years)`} />
+        <CardBody>
+          <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            {[
+              { label: `Current membership${cBiAnnual ? ' (bi-annual)' : ''}`, color: 'var(--ink)', year: cPtsYear, total: cPtsTotal, cost: cTotal },
+              { label: share.name, color: 'var(--ocean)', year: fPtsYear, total: fPtsTotal, cost: fTotal },
+            ].map(col => (
+              <div key={col.label}>
+                <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ink3)', marginBottom: 10 }}>{col.label}</div>
+                {[
+                  ['Points per year', num(col.year) + ' pts'],
+                  [`Total points to ${endYear}`, num(col.total) + ' pts'],
+                  ['Net cost per point', perPt(col.cost, col.total)],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--border)', fontSize: 12.5 }}>
+                    <span style={{ color: 'var(--ink3)' }}>{k}</span>
+                    <span style={{ fontWeight: 500, color: col.color }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div style={{
+            background: fPtsYear >= cPtsYear ? 'var(--ocean-light)' : 'var(--sand)', borderRadius: 10, padding: 16, textAlign: 'center',
+            border: '1px solid var(--border)',
+          }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--ocean)', marginBottom: 4 }}>
+              {fPtsYear >= cPtsYear ? `${share.name} gives more points` : 'Current membership gives more points'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: 'var(--ocean)' }}>
+              {fPtsYear >= cPtsYear ? '+' : '−'}{num(Math.abs(fPtsTotal - cPtsTotal))} pts
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 4 }}>
+              {num(Math.abs(fPtsYear - cPtsYear))} pts a year {fPtsYear >= cPtsYear ? 'more' : 'less'}{cPtsYear > 0 ? ` (${(fPtsYear / cPtsYear).toFixed(1)}× the points)` : ''}, over {years} years.
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       <Card style={{ marginBottom: 14 }}>
         <CardHeader title={`Comparison to ${endYear} (${years} years)`} />

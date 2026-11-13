@@ -216,79 +216,6 @@ function DestRow({ d, sel, responses, onToggle, onRoomChange, onTpyChange }) {
 
 // ── results sub-sections ─────────────────────────────────────
 
-const usd = n => '$' + Math.round(n).toLocaleString('en-US')
-
-// Points Membership vs Fractional, side by side for this wish list, plus every
-// option on one points-per-year ladder.
-function PointsVsFractional({ total }) {
-  const pm = matchInCatalog(PACKAGES, total)
-  const fm = matchInCatalog(FRACTIONAL_PACKAGES, total)
-  const pick = m => m.hit || m.overTop
-  const p = pick(pm), f = pick(fm)
-
-  const Col = ({ label, pkg, color, bg }) => (
-    <div style={{ flex: 1, minWidth: 200, borderRadius: 12, padding: 14, background: bg, border: `1.5px solid ${color}` }}>
-      <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color, marginBottom: 6 }}>{label}</div>
-      {pkg ? <>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, marginBottom: 2 }}>{pkg.name}</div>
-        <div style={{ fontSize: 26, fontFamily: 'var(--font-display)', color }}>{fmt(pkg.pts)}<span style={{ fontSize: 12, color: 'var(--ink3)', marginLeft: 5 }}>pts / year</span></div>
-        <div style={{ fontSize: 12, color: 'var(--ink2)', marginTop: 4 }}>
-          {pkg.pts >= total ? <>Covers the wish list, <strong>{fmt(pkg.pts - total)}</strong> to spare</> : <><strong style={{ color: 'var(--rose)' }}>{fmt(total - pkg.pts)}</strong> short of the wish list</>}
-        </div>
-        {pkg.price && <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 4 }}>{usd(pkg.price)} · {usd(pkg.price / pkg.pts)} per yearly point</div>}
-      </> : <div style={{ fontSize: 12, color: 'var(--ink3)' }}>Nothing available</div>}
-    </div>
-  )
-
-  const ladder = [
-    ...PACKAGES.map(x => ({ ...x, kind: 'Points' })),
-    ...FRACTIONAL_PACKAGES.map(x => ({ ...x, kind: 'Fractional' })),
-  ].sort((a, b) => a.pts - b.pts)
-  const markerAt = ladder.findIndex(x => x.pts >= total)
-
-  return (
-    <div style={{ marginBottom: 26 }}>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 500, marginBottom: 3 }}>Points vs Fractional</div>
-      <div style={{ fontSize: 11.5, color: 'var(--ink3)', marginBottom: 12 }}>The best fit from each, for {fmt(total)} pts/year</div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-        <Col label="Points Membership" pkg={p} color="var(--ocean)" bg="var(--ocean-light)" />
-        <Col label="Fractional Ownership" pkg={f} color="#5A3DB8" bg="#F0EDFC" />
-      </div>
-      {p && f && (
-        <div style={{ border: '1px dashed var(--border2)', background: 'var(--sand)', borderRadius: 12, padding: '12px 14px', fontSize: 12.5, color: 'var(--ink2)', marginBottom: 14 }}>
-          The <strong>{f.name}</strong> gives <strong>{fmt(f.pts - p.pts)}</strong> more points a year than <strong>{p.name}</strong> ({fmt(f.pts / p.pts)}× as many)
-          {p.price && f.price ? <>, for {usd(f.price - p.price)} more. That's {usd(f.price / f.pts)} per yearly point against {usd(p.price / p.pts)}.</> : '.'}
-          <div style={{ marginTop: 6 }}>Yearly fees: <strong>{usd(402 + 6.32 * p.pts)}</strong> on {p.name} (2027 club fee $402 + $6.32/pt), <strong>none</strong> on fractional.</div>
-          <div style={{ fontSize: 11, color: 'var(--ink3)', marginTop: 4 }}>Points: 25-year membership. Fractional: ownership of a real share, full = 4 weeks, half = 2 weeks. Prices from the 13 Dec 2025 price list, before VAT and discounts.</div>
-        </div>
-      )}
-      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: .5, color: 'var(--ink3)', margin: '4px 0 8px' }}>Every option by points per year</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-        {ladder.map((x, i) => (
-          <React.Fragment key={x.id}>
-            {i === markerAt && (
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--gold)', padding: '3px 2px', borderTop: '2px dashed var(--gold)' }}>
-                ▲ Wish list needs {fmt(total)} pts/year
-              </div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: 9, fontSize: 12.5, background: 'white', border: '1px solid var(--border)' }}>
-              <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: x.kind === 'Points' ? 'var(--ocean)' : '#5A3DB8', width: 70 }}>{x.kind}</span>
-              <span style={{ flex: 1, fontWeight: 600 }}>{x.name}</span>
-              <span style={{ color: 'var(--ink3)', minWidth: 70, textAlign: 'right' }}>{x.price ? usd(x.price) : ''}</span>
-              <span style={{ fontWeight: 600, minWidth: 64, textAlign: 'right' }}>{fmt(x.pts)} pts</span>
-            </div>
-          </React.Fragment>
-        ))}
-        {markerAt === -1 && (
-          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--rose)', padding: '3px 2px', borderTop: '2px dashed var(--rose)' }}>
-            ▲ Wish list needs {fmt(total)} pts/year, more than any single option
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 function CatalogSection({ group, responses, total, current, matches }) {
   const isCurrentType = responses.ownership === group.key
   const baseline = isCurrentType ? current : 0
@@ -569,8 +496,6 @@ export function PointsPassportScreen({ guests, addGuest, onGoToGuest }) {
                   : <>On this wish list, <strong>Points Elite</strong>'s flat rate would cost <strong style={{ color: 'var(--gold)' }}>{fmt(eliteDiff)}</strong> more points/year than standard pricing — not the right upsell here.</>)}
             </div>
           )}
-
-          <PointsVsFractional total={total} />
 
           {groups.map(group => (
             <CatalogSection key={group.key} group={group} responses={responses} total={total} current={current} matches={matches} />
