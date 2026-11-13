@@ -18,7 +18,8 @@ export function useGuests(assignedTo, staffName) {
   const loadGuests = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await getGuests()
+      if (!assignedTo) { setGuests([]); return }
+      const data = await getGuests(assignedTo)
 
       // Auto-update status to 'Departed' for guests whose departure date has
       // passed, but ONLY if nobody ever worked the lead (still the default
@@ -41,7 +42,7 @@ export function useGuests(assignedTo, staffName) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [assignedTo])
 
   useEffect(() => {
     loadGuests()
@@ -49,7 +50,8 @@ export function useGuests(assignedTo, staffName) {
     // Real-time subscription — updates live when another tab/user changes data
     const subscription = subscribeToGuests((payload) => {
       if (payload.eventType === 'INSERT') {
-        setGuests(prev => [payload.new, ...prev])
+        if (assignedTo && payload.new.assigned_to !== assignedTo) return
+        setGuests(prev => prev.some(g => g.id === payload.new.id) ? prev : [payload.new, ...prev])
       } else if (payload.eventType === 'UPDATE') {
         setGuests(prev => prev.map(g => g.id === payload.new.id ? payload.new : g))
       } else if (payload.eventType === 'DELETE') {
@@ -58,7 +60,7 @@ export function useGuests(assignedTo, staffName) {
     })
 
     return () => subscription.unsubscribe()
-  }, [loadGuests])
+  }, [loadGuests, assignedTo])
 
   // Add a new guest
   const addGuest = useCallback(async (guestData) => {

@@ -7,10 +7,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // ── GUESTS ────────────────────────────────────────────────────
 
-export async function getGuests() {
-  const { data, error } = await supabase
-    .from('guests')
-    .select('*')
+export async function getGuests(assignedTo) {
+  let q = supabase.from('guests').select('*')
+  // Personal screens show only your own guests (managers can see everyone's,
+  // but that's the Manager screen's job)
+  if (assignedTo) q = q.eq('assigned_to', assignedTo)
+  const { data, error } = await q
     .order('created_at', { ascending: false })
   if (error) throw error
   return data

@@ -10,7 +10,7 @@ const BOOKABLE = ['Arriving Soon', 'Contacted']
 
 // CALENDAR: every guest's stay across the Karma week (Sat–Fri), with tours.
 // Tap a day inside a guest's stay to book (or move) their tour.
-export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, staffName }) {
+export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, staffName, readOnly = false, repLabel }) {
   const today = baliTodayKey()
   const [start, setStart] = useState(weekStartKey(today))
   const [booking, setBooking] = useState(null)   // { guestId, day, time }
@@ -39,6 +39,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
   })
 
   function openBooking(g, day) {
+    if (readOnly) return
     setErr(null)
     setBooking({ guestId: g?.id || '', day: day || today, time: g?.tour_at ? tourTime(g.tour_at) : '10:00' })
   }
@@ -81,7 +82,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
         <Btn variant="ghost" size="sm" onClick={() => setStart(addDaysKey(start, 7))}><i className="ti ti-chevron-right" /></Btn>
         {start !== weekStartKey(today) && <Btn variant="ghost" size="sm" onClick={() => setStart(weekStartKey(today))}>This week</Btn>}
         <div style={{ flex: 1 }} />
-        <Btn size="sm" onClick={() => openBooking(null, days.includes(today) ? today : start)}><i className="ti ti-calendar-plus" /> Book a tour</Btn>
+        {!readOnly && <Btn size="sm" onClick={() => openBooking(null, days.includes(today) ? today : start)}><i className="ti ti-calendar-plus" /> Book a tour</Btn>}
       </div>
 
       {/* Grid */}
@@ -115,6 +116,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
                 <div style={{ fontSize: 12.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{g.name}</div>
                 <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginTop: 2 }}>
                   <span style={{ transform: 'scale(.85)', transformOrigin: 'left' }}><StatusPill status={g.status} /></span>
+                  {repLabel && <span style={{ fontSize: 11, color: 'var(--ink3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{repLabel(g)}</span>}
                 </div>
               </div>
               {days.map(d => {
@@ -124,8 +126,8 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
                 return (
                   <div key={d}
                     onClick={() => inStay && openBooking(g, d)}
-                    title={inStay ? (hasTour ? `Tour ${tourTime(g.tour_at)}: tap to change` : 'Tap to book a tour this day') : ''}
-                    style={{ borderLeft: '1px solid var(--border)', padding: '6px 0', cursor: inStay ? 'pointer' : 'default', background: d === today ? 'rgba(26,95,110,.04)' : 'transparent', display: 'flex', alignItems: 'center' }}>
+                    title={inStay && !readOnly ? (hasTour ? `Tour ${tourTime(g.tour_at)}: tap to change` : 'Tap to book a tour this day') : hasTour ? `Tour ${tourTime(g.tour_at)}` : ''}
+                    style={{ borderLeft: '1px solid var(--border)', padding: '6px 0', cursor: inStay && !readOnly ? 'pointer' : 'default', background: d === today ? 'rgba(26,95,110,.04)' : 'transparent', display: 'flex', alignItems: 'center' }}>
                     {inStay && (
                       <div style={{
                         width: '100%', height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -155,7 +157,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
       {/* Tours this week */}
       <div style={{ marginTop: 18 }}>
         <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--ink3)', marginBottom: 8 }}>Tours this week · {tours.length}</div>
-        {tours.length === 0 && <div style={{ fontSize: 12.5, color: 'var(--ink4)' }}>No tours booked yet. Tap a day in a guest's stay to book one.</div>}
+        {tours.length === 0 && <div style={{ fontSize: 12.5, color: 'var(--ink4)' }}>No tours booked yet.{readOnly ? '' : " Tap a day in a guest's stay to book one."}</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {tours.map(({ g }) => (
             <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'white', border: '1px solid var(--border)', borderRadius: 10, padding: '9px 12px' }}>
@@ -164,7 +166,8 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
                 <div style={{ fontSize: 13, fontWeight: 500 }}>{g.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--ink3)' }}>{g.membership || g.member_type}{g.room ? ` · Rm ${g.room}` : ''} · {g.arrival_date} → {g.depart_date}</div>
               </div>
-              <Btn variant="ghost" size="sm" onClick={() => openBooking(g, tourDayKey(g.tour_at))}><i className="ti ti-pencil" /></Btn>
+              {repLabel && <div style={{ fontSize: 12, color: 'var(--ink3)' }}>{repLabel(g)}</div>}
+              {!readOnly && <Btn variant="ghost" size="sm" onClick={() => openBooking(g, tourDayKey(g.tour_at))}><i className="ti ti-pencil" /></Btn>}
             </div>
           ))}
         </div>

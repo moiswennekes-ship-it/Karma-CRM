@@ -18,7 +18,8 @@ import { ImportScreen } from './components/ImportScreen'
 import { WeekHistoryScreen } from './components/WeekHistoryScreen'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { LoginScreen } from './screens/Login'
-import { TeamScreen } from './screens/Team'
+import { ManagerScreen } from './screens/Manager'
+import { useTeamActivity, untouchedLeads } from './lib/manager'
 
 // ── NAVIGATION: six screens, one job each ─────────────────────
 const NAV = [
@@ -28,7 +29,7 @@ const NAV = [
   { id: 'coach',  icon: 'ti-sparkles',       label: 'Ask Guru' },
   { id: 'import', icon: 'ti-table-import',   label: 'Import' },
   { id: 'tools',  icon: 'ti-calculator',     label: 'Tools' },
-  { id: 'team',   icon: 'ti-users-group',    label: 'Team', managerOnly: true },
+  { id: 'team',   icon: 'ti-chart-bar',      label: 'Manager', managerOnly: true },
 ]
 
 const SCREEN_META = {
@@ -38,7 +39,7 @@ const SCREEN_META = {
   coach:  { title: 'Ask Guru', sub: 'Your AI sales coach, messages, objections and the Karma Brain' },
   import: { title: 'Import & weeks', sub: 'Paste the weekly leadsheet, manage weeks' },
   tools:  { title: 'Tools', sub: 'Points Passport, fee projections, fractional comparison' },
-  team:   { title: 'Team', sub: "Each rep's pipeline" },
+  team:   { title: 'Manager', sub: 'Reps, untouched leads, tours and activity' },
 }
 
 function ImportHub({ currentWeek, currentYear, guests, onImport, onUpdate, onStartNewWeek, onOpenGuest }) {
@@ -86,6 +87,8 @@ export default function App() {
   const { guests: rawGuests, loading, error, addGuest, editGuest, updateStatus, removeGuest, reload } = useGuests(staff?.id, staff?.name)
   // Each guest carries their earlier stays (matched on member number).
   const guests = useMemo(() => withHistory(rawGuests), [rawGuests])
+  const { interactions: teamActivity, teamGuests } = useTeamActivity(isManager)
+  const untouchedCount = useMemo(() => isManager ? untouchedLeads(teamGuests, teamActivity).length : 0, [isManager, teamGuests, teamActivity])
   const isMobile = useIsMobile()
   const [screen, setScreen] = useState('today')
   const [addOpen, setAddOpen] = useState(false)
@@ -203,6 +206,7 @@ export default function App() {
                 }}>
                   <i className={`ti ${item.icon}`} style={{ fontSize: 17, width: 18, textAlign: 'center' }} />
                   {item.label}
+                  {item.id === 'team' && untouchedCount > 0 && <span style={{ marginLeft: 'auto', background: 'var(--rose)', color: 'white', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 600 }}>{untouchedCount}</span>}
                 </div>
               )
             })}
@@ -259,7 +263,7 @@ export default function App() {
               />
             )}
             {screen === 'tools'  && <ToolsHub guests={guests} addGuest={addGuest} onGoToGuest={() => setScreen('guests')} />}
-            {screen === 'team' && isManager && <TeamScreen currentStaffId={staff.id} />}
+            {screen === 'team' && isManager && <ManagerScreen guests={teamGuests} interactions={teamActivity} isMobile={isMobile} currentStaffId={staff.id} />}
           </ErrorBoundary>
         </div>
       </div>
@@ -288,6 +292,7 @@ export default function App() {
                       background: screen === item.id ? 'var(--ocean-light)' : 'transparent', color: screen === item.id ? 'var(--ocean)' : 'var(--ink)',
                     }}>
                       <i className={`ti ${item.icon}`} style={{ fontSize: 20 }} /> {item.label}
+                      {item.id === 'team' && untouchedCount > 0 && <span style={{ marginLeft: 'auto', background: 'var(--rose)', color: 'white', borderRadius: 10, padding: '1px 8px', fontSize: 12, fontWeight: 600 }}>{untouchedCount}</span>}
                     </div>
                   ))}
                 </div>
@@ -297,7 +302,10 @@ export default function App() {
               {bar.map(item => (
                 <Item key={item.id} icon={item.icon} label={item.id === 'coach' ? 'Guru' : item.label} active={screen === item.id && !moreOpen} onClick={() => { setScreen(item.id); setMoreOpen(false) }} />
               ))}
-              <Item icon="ti-dots" label="More" active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)} />
+              <div style={{ flex: 1, position: 'relative', display: 'flex' }}>
+                <Item icon="ti-dots" label="More" active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)} />
+                {untouchedCount > 0 && <span style={{ position: 'absolute', top: -2, right: '22%', background: 'var(--rose)', color: 'white', borderRadius: 10, padding: '0 6px', fontSize: 10.5, fontWeight: 700 }}>{untouchedCount}</span>}
+              </div>
             </div>
           </>
         )
