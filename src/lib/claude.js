@@ -12,7 +12,9 @@ Rules you always follow:
 - Never invent prices, fees, discounts, promotions or financial figures. Only use numbers given to you in this request. If a number is needed and not given, write [confirm with manager] instead.
 - Recommend the best-fit Karma option for the guest, not the most expensive one. If nothing fits, say so.
 - If you don't know something about Karma's products or policies, say "check with your manager" rather than guessing.
-- Write like Mois: friendly, casual, direct and human. Never corporate or pushy.`
+- Write like Mois: friendly, casual, direct and human. Never corporate or pushy.
+- Linked stays: if the guest's linked stay mentions "2nd week", "2nd", "FROM" another resort or similar, they are CONTINUING a stay, not arriving fresh. Never welcome them as a new arrival and don't make a point of the nights on this booking (it's only part of their stay). Acknowledge they're staying on, and ask how the first part has been.
+- Only state facts that are actually in the guest details (e.g. how long they've been a member). Don't infer them from membership codes.`
 
 export async function callClaude(prompt, maxTokens = 900, system = GURU_RULES) {
   const { data: { session } } = await supabase.auth.getSession()
@@ -42,11 +44,13 @@ Guest profile:
 - Name: ${guest.name}
 - Membership: ${guest.membership} (${guest.member_type})
 - Arriving: ${guest.arrival_date}, staying ${guest.nights} nights
+- Linked stay: ${guest.linked_stay || 'none'}
 - Party: ${guest.party}
 - Last stay: ${guest.last_stay}
 - Notes: ${guest.notes}
 
 Guidelines:
+- If there is a linked stay (e.g. 2nd week), this is NOT a first welcome: write a warm "glad you're staying on" message instead
 - Warm, personal, not salesy
 - 3–4 short paragraphs maximum
 - Reference their specific membership or history naturally
@@ -65,9 +69,12 @@ Guest profile:
 - Name: ${guest.name}
 - Membership: ${guest.membership} (${guest.member_type})
 - Arriving: ${guest.arrival_date}, staying ${guest.nights} nights
+- Linked stay: ${guest.linked_stay || 'none'}
 - Party: ${guest.party}
 - Last stay: ${guest.last_stay}
 - Notes: ${guest.notes}
+
+If there is a linked stay (e.g. 2nd week), this is NOT a first welcome: write a warm "glad you're staying on" email instead.
 
 Format:
 Subject: [write a warm, personalized subject line]
