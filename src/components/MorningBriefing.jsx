@@ -71,7 +71,7 @@ Keep it under 200 words. Sound like a knowledgeable colleague, not a robot.`
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: expanded ? 16 : 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ fontSize: 22 }}>🌅</div>
+          <i className="ti ti-sun" style={{ fontSize: 24, color: '#D4A855' }} />
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'white', lineHeight: 1.2 }}>
               {dayName} Briefing
@@ -85,14 +85,14 @@ Keep it under 200 words. Sound like a knowledgeable colleague, not a robot.`
         {/* Quick stats */}
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           {[
-            [arrivingToday.length, 'Arriving', '🛬'],
-            [notContacted.length, 'Contact', '💬'],
-            [followUps.length, 'Follow-up', '🔔'],
-            [hotLeads.length, 'Hot', '🔥'],
-          ].map(([count, label, emoji]) => count > 0 && (
+            [arrivingToday.length, 'Arriving'],
+            [notContacted.length, 'Contact'],
+            [followUps.length, 'Follow-up'],
+            [hotLeads.length, 'Hot'],
+          ].map(([count, label]) => count > 0 && (
             <div key={label} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 18, fontWeight: 600, color: 'white', lineHeight: 1 }}>{count}</div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,.5)', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
             </div>
           ))}
 
