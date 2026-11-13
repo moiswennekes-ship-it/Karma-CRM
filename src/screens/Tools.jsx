@@ -183,6 +183,7 @@ export function ComparisonScreen() {
   const [cBiAnnual, setCBiAnnual] = useState(false)
   const [fPrice, setFPrice] = useState(45000)
   const [fExit, setFExit] = useState(52000)
+  const [fFee, setFFee] = useState(0)
   const [endYear, setEndYear] = useState(2042)
 
   const currentYear = new Date().getFullYear()
@@ -196,7 +197,10 @@ export function ComparisonScreen() {
     else cTotal += yFee
   }
 
-  const fTotal = fPrice - fExit
+  // Fractional owners pay yearly maintenance fees too, rising with the same inflation
+  let fFees = 0
+  for (let y = 1; y <= years; y++) fFees += Math.round(fFee * Math.pow(1 + cInflation / 100, y - 1))
+  const fTotal = fPrice + fFees - fExit
   const saving = cTotal - fTotal
   const fmt = (n) => '$' + Math.abs(Math.round(n)).toLocaleString()
 
@@ -228,8 +232,14 @@ export function ComparisonScreen() {
           <CardBody>
             <FieldLabel>Purchase Price ($)</FieldLabel>
             <FieldInput value={fPrice} onChange={v => setFPrice(Number(v))} type="number" />
-            <div style={{ fontSize: 11, color: 'var(--ink3)', marginBottom: 12 }}>No ongoing maintenance fees — one-time purchase only.</div>
-            <FieldLabel>Projected Exit Value at 2042 ($)</FieldLabel>
+            <FieldLabel>Yearly maintenance fee for this share ($)</FieldLabel>
+            <FieldInput value={fFee} onChange={v => setFFee(Number(v))} type="number" />
+            {!fFee && (
+              <div style={{ fontSize: 11, color: 'var(--rose)', marginBottom: 12 }}>
+                Enter the share's yearly fee from the current price sheet. Without it the comparison overstates the saving.
+              </div>
+            )}
+            <FieldLabel>Projected exit value at {endYear} ($, estimate, not guaranteed)</FieldLabel>
             <FieldInput value={fExit} onChange={v => setFExit(Number(v))} type="number" />
           </CardBody>
         </Card>
@@ -248,9 +258,9 @@ export function ComparisonScreen() {
               ]},
               { label: 'Fractional ownership', rows: [
                 ['Purchase price', fmt(fPrice), null],
-                ['Ongoing fees', '$0', true],
-                ['Projected exit value at 2042', fmt(fExit), true],
-                ['Net cost to 2042', fmt(Math.max(0, fTotal)), fTotal < cTotal],
+                [`Maintenance fees to ${endYear}`, fmt(fFees), null],
+                [`Projected exit value at ${endYear}`, fmt(fExit), true],
+                [`Net cost to ${endYear}`, (fTotal < 0 ? '+' : '') + fmt(fTotal), fTotal < cTotal],
                 ['Equity / ownership', 'Deeded title', true],
               ]},
             ].map(col => (
@@ -278,7 +288,7 @@ export function ComparisonScreen() {
               {fmt(saving)}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 4 }}>
-              {saving > 0 ? 'plus you own an appreciating asset with deeded title' : 'factoring in purchase price and projected exit value'}
+              Includes purchase price, maintenance fees and projected exit value. Exit value is an estimate.{!fFee && ' Fractional fees not entered yet.'}
             </div>
           </div>
         </CardBody>

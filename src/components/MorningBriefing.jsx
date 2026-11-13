@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { callClaude } from '../lib/claude'
 import { isToday, isLeavingSoon, hasLeft, daysUntilDeparture, isInHouse } from '../lib/dates'
 
 export function MorningBriefing({ guests }) {
@@ -52,20 +53,10 @@ Write a warm, direct morning briefing (3-4 short paragraphs, not bullet points).
 Keep it under 200 words. Sound like a knowledgeable colleague, not a robot.`
 
     try {
-     const res = await fetch('/api/claude', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-5',
-          max_tokens: 400,
-          messages: [{ role: 'user', content: prompt }]
-        })
-      })
-      const data = await res.json()
-      const text = data.content?.map(c => c.text || '').join('') || ''
+      const text = await callClaude(prompt, 400)
       setBriefing(text)
     } catch (e) {
-      setBriefing('AI briefing unavailable. Add your Anthropic API key in Vercel environment variables to enable this feature.')
+      setBriefing('AI briefing unavailable right now: ' + (e.message || 'try again in a moment.'))
     } finally {
       setLoading(false)
     }
