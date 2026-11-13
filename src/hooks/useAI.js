@@ -34,7 +34,7 @@ export function useAI() {
       return text
     } catch (err) {
       setError(err.message)
-      setOutput('Unable to connect to AI. Check your API key in .env and try again.')
+      setOutput('AI error: ' + (err.message || 'unknown error') + '. If it says to sign in, refresh the page and sign in again.')
     } finally {
       setLoading(false)
     }
