@@ -36,7 +36,11 @@ export async function callClaude(prompt, maxTokens = 900, system = GURU_RULES) {
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error?.message || 'AI request failed')
-  return data.content?.map(c => c.text || '').join('') || ''
+  const text = data.content?.map(c => c.text || '').join('') || ''
+  // Ran out of room mid-answer: say so instead of stopping mid-sentence
+  return data.stop_reason === 'max_tokens'
+    ? text.trimEnd() + '…\n\n(Guru ran out of space here. Ask "continue" for the rest.)'
+    : text
 }
 
 // ── WELCOME MESSAGE ───────────────────────────────────────────

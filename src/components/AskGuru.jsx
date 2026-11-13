@@ -89,12 +89,12 @@ export function AskGuru({ guest, activity = [], extraContext = '', compact = fal
       const brain = await loadBrain()
       const system = [
         GURU_RULES,
-        'You are Guru, Mois\'s AI sales coach. Be practical and specific: give the actual words to say or send, and one clear next step. Challenge Mois if his plan looks wrong. Keep answers short unless asked for detail.',
+        'You are Guru, Mois\'s AI sales coach. Be practical and specific: give the actual words to say or send, and one clear next step. Challenge Mois if his plan looks wrong. Keep answers short: under about 200 words unless Mois asks for detail.',
         brainContext(brain),
         guestContext(guest, activity),
         extraContext,
       ].filter(Boolean).join('\n\n')
-      const answer = await callClaude(next.map(m => ({ role: m.role, content: m.content })), 1200, system)
+      const answer = await callClaude(next.map(m => ({ role: m.role, content: m.content })), 2000, system)
       setMessages([...next, { role: 'assistant', content: answer }])
       if (guest?.id) {
         saveAIMessage({ guest_id: guest.id, message_type: 'ask_guru', prompt_used: q, output: answer, was_sent: false }).catch(() => {})
