@@ -3,6 +3,7 @@ import { Avatar, StatusPill } from '../components/UI'
 import { ProfilePanel } from '../components/ProfilePanel'
 import { MorningBriefing } from '../components/MorningBriefing'
 import { rankGuests, isArrivingToday, isInHouseNow } from '../lib/nextAction'
+import { logIcon, logAgo } from '../lib/lastLog'
 import { isLeavingSoon, hasLeft, tourDayKey, tourTime, baliTodayKey } from '../lib/dates'
 
 const FILTERS = [
@@ -118,6 +119,12 @@ export function DashboardScreen({ guests, isMobile, onGoTo, ...profileProps }) {
                     <div style={{ fontWeight: 600, fontSize: top ? 15 : 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</div>
                     <div style={{ fontSize: top ? 14 : 13, fontWeight: 500, color: next.urgent ? 'var(--rose)' : 'var(--ocean)', marginTop: 1 }}>{next.action}</div>
                     <div style={{ fontSize: 12, color: 'var(--ink3)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'nowrap' : 'normal' }}>{next.reason}</div>
+                    {g._lastLog && (
+                      <div style={{ fontSize: 12.5, color: 'var(--ink)', marginTop: 5, display: 'flex', gap: 5, alignItems: 'flex-start' }}>
+                        <i className={`ti ${logIcon(g._lastLog.type)}`} style={{ color: 'var(--ocean)', marginTop: 2 }} />
+                        <span>{g._lastLog.content} <span style={{ color: 'var(--ink4)', whiteSpace: 'nowrap' }}>· {logAgo(g._lastLog.created_at)}</span></span>
+                      </div>
+                    )}
                   </div>
                   {top && g.whatsapp && (
                     <a href={`https://wa.me/${g.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} title="Open WhatsApp"

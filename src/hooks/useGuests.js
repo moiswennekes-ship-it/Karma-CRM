@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { isArrivingToday } from '../lib/nextAction'
 import {
   getGuests,
@@ -7,6 +7,7 @@ import {
   deleteGuest,
   subscribeToGuests,
   logInteraction,
+  supabase,
 } from '../lib/supabase'
 import { hasLeft, parseKarmaDate, karmaWeek, karmaYear } from '../lib/dates'
 
@@ -14,6 +15,19 @@ export function useGuests(assignedTo, staffName) {
   const [guests, setGuests] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Latest thing logged on each guest (WhatsApp, note, meeting, email)
+  const [lastLogs, setLastLogs] = useState({})
+
+  const loadLastLogs = useCallback(async (ids) => {
+    if (!ids.length) { setLastLogs({}); return }
+    const { data } = await supabase.from('interactions')
+      .select('guest_id, type, content, created_at')
+      .neq('type', 'status_change').in('guest_id', ids)
+      .order('created_at', { ascending: false }).limit(2000)
+    const map = {}
+    for (const a of data || []) if (!map[a.guest_id]) map[a.guest_id] = a
+    setLastLogs(map)
+  }, [])
 
   // Initial load
   const loadGuests = useCallback(async () => {
@@ -38,12 +52,13 @@ export function useGuests(assignedTo, staffName) {
       }
 
       setGuests(data)
+      loadLastLogs(data.map(g => g.id))
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }, [assignedTo])
+  }, [assignedTo, loadLastLogs])
 
   useEffect(() => {
     loadGuests()
@@ -60,8 +75,22 @@ export function useGuests(assignedTo, staffName) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    // New WhatsApps / notes / meetings show up as the guest's latest log
+    const logChannel = supabase.channel('interactions-latest')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'interactions' }, ({ new: a }) => {
+        if (a.type === 'status_change') return
+        setLastLogs(prev => ({ ...prev, [a.guest_id]: a }))
+      })
+      .subscribe()
+
+    return () => { subscription.unsubscribe(); supabase.removeChannel(logChannel) }
   }, [loadGuests, assignedTo])
+
+  // Guests with their latest logged note attached (as _lastLog)
+  const guestsWithLogs = useMemo(
+    () => guests.map(g => (lastLogs[g.id] ? { ...g, _lastLog: lastLogs[g.id] } : g)),
+    [guests, lastLogs],
+  )
 
   // Add a new guest
   const addGuest = useCallback(async (guestData) => {
@@ -146,7 +175,7 @@ export function useGuests(assignedTo, staffName) {
   const hotLeads = guests.filter(g => g.status === 'Hot Lead')
 
   return {
-    guests,
+    guests: guestsWithLogs,
     loading,
     error,
     addGuest,

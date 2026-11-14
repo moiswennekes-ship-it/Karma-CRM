@@ -4,6 +4,7 @@ import { AskGuru } from './AskGuru'
 import { formatDaysLeft, hasLeft, isLeavingSoon, tourLabel } from '../lib/dates'
 import { nextAction } from '../lib/nextAction'
 import { weekTag } from '../lib/history'
+import { logIcon, logAgo } from '../lib/lastLog'
 import { getInteractions, logInteraction } from '../lib/supabase'
 
 const TYPE_ICON = {
@@ -79,6 +80,14 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
     if (why === null) return
     await onEditGuest(guest.id, { outcome: 'lost', outcome_reason: why || null })
     await logInteraction({ guest_id: guest.id, type: 'outcome', content: `No deal: ${why || 'no reason given'}`, staff_name: staffName || null }).catch(() => {})
+    loadActivity()
+  }
+
+  async function markDeal() {
+    const what = window.prompt('Deal! What did they buy? (product, price, terms...)', '')
+    if (what === null) return
+    await onEditGuest(guest.id, { outcome: 'won', outcome_reason: what || null, status: 'Converted' })
+    await logInteraction({ guest_id: guest.id, type: 'outcome', content: `Deal: ${what || 'no details given'}`, staff_name: staffName || null }).catch(() => {})
     loadActivity()
   }
 
@@ -158,12 +167,25 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
             </div>
           )}
 
+          {logged.length > 0 && (
+            <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '11px 13px', marginBottom: 14 }}>
+              <Label>Latest from you</Label>
+              {logged.slice(0, 3).map(a => (
+                <div key={a.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, marginTop: 6 }}>
+                  <i className={`ti ${logIcon(a.type)}`} style={{ color: 'var(--ocean)', marginTop: 2 }} />
+                  <div style={{ flex: 1, whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{a.content} <span style={{ color: 'var(--ink4)', fontSize: 11.5 }}>· {logAgo(a.created_at)}</span></div>
+                </div>
+              ))}
+              {logged.length > 3 && <button onClick={() => setTab('activity')} style={{ background: 'none', border: 'none', color: 'var(--ocean)', fontSize: 12.5, cursor: 'pointer', padding: 0, marginTop: 8, fontFamily: 'var(--font-body)' }}>All {logged.length} entries <i className="ti ti-chevron-right" /></button>}
+            </div>
+          )}
+
           {guest.outcome && (
             <div style={{ background: guest.outcome === 'won' ? 'var(--palm-light)' : '#F3F2EE', borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <div style={{ fontSize: 12.5 }}>
                 <strong>{guest.outcome === 'won' ? 'Won' : 'No deal'}</strong>{guest.outcome_reason ? `: ${guest.outcome_reason}` : ''}
               </div>
-              {guest.outcome === 'lost' && <Btn variant="ghost" size="sm" onClick={reopen}>Reopen</Btn>}
+              <Btn variant="ghost" size="sm" onClick={reopen}>{guest.outcome === 'lost' ? 'Reopen' : 'Undo'}</Btn>
             </div>
           )}
 
@@ -207,10 +229,15 @@ export function GuestProfile({ guest, staffName, onStatusChange, onEditGuest, on
             <Btn variant="ghost" size="sm" onClick={() => onEdit(guest)} style={{ flex: 1, justifyContent: 'center' }}>
               <i className="ti ti-pencil" /> Edit
             </Btn>
-            {!guest.outcome && guest.status !== 'Converted' && (
-              <Btn variant="ghost" size="sm" onClick={markNoDeal} style={{ flex: 1, justifyContent: 'center' }}>
-                <i className="ti ti-circle-x" /> No deal
-              </Btn>
+            {!guest.outcome && (
+              <>
+                <Btn variant="ghost" size="sm" onClick={markDeal} style={{ flex: 1, justifyContent: 'center', color: 'var(--palm)' }}>
+                  <i className="ti ti-trophy" /> Deal
+                </Btn>
+                <Btn variant="ghost" size="sm" onClick={markNoDeal} style={{ flex: 1, justifyContent: 'center' }}>
+                  <i className="ti ti-circle-x" /> No deal
+                </Btn>
+              </>
             )}
             <Btn variant="danger" size="sm" onClick={handleDelete} style={{ flex: 1, justifyContent: 'center' }}>
               <i className="ti ti-trash" /> Delete

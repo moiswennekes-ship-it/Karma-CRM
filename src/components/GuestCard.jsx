@@ -2,6 +2,7 @@ import React from 'react'
 import { Avatar, STATUS_CFG, ALL_STATUSES } from './UI'
 import { hasLeft, isLeavingSoon, formatDaysLeft, tourLabel } from '../lib/dates'
 import { nextAction } from '../lib/nextAction'
+import { logIcon, logAgo } from '../lib/lastLog'
 
 // "14 Nov 26" → "14 Nov"
 const short = d => (d || '?').split(/\s+/).slice(0, 2).join(' ')
@@ -75,6 +76,13 @@ export function GuestCard({ guest, selected, onClick, onStatusChange }) {
             {(second || guest._stayKind === 'continuing') && <Tag icon="ti-link" bg="var(--ocean-light)" color="var(--ocean)">{second ? guest.linked_stay : 'Continuing stay'}</Tag>}
             {guest._stayKind === 'returning' && <Tag icon="ti-refresh" bg="var(--ocean-light)" color="var(--ocean)">Returning</Tag>}
             {guest.outcome && <Tag icon={guest.outcome === 'won' ? 'ti-trophy' : 'ti-circle-x'} bg={guest.outcome === 'won' ? 'var(--palm-light)' : '#F1F0EC'} color={guest.outcome === 'won' ? 'var(--palm)' : '#8A8A8E'}>{guest.outcome === 'won' ? 'Won' : 'No deal'}</Tag>}
+          </div>
+        )}
+
+        {guest._lastLog && (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 8, fontSize: 12.5, color: 'var(--ink)', background: 'var(--sand)', borderRadius: 8, padding: '6px 9px' }}>
+            <i className={`ti ${logIcon(guest._lastLog.type)}`} style={{ color: 'var(--ocean)', marginTop: 2 }} />
+            <span style={{ flex: 1, minWidth: 0 }}>{guest._lastLog.content} <span style={{ color: 'var(--ink4)', whiteSpace: 'nowrap' }}>· {logAgo(guest._lastLog.created_at)}</span></span>
           </div>
         )}
 

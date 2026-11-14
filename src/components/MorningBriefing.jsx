@@ -45,6 +45,9 @@ Current pipeline (active guests only — departed guests excluded):
 - ${leavingSoon.length} high-value guests leaving in 2 days or less: ${leavingSoon.map(g => `${g.name} (${daysUntilDeparture(g.depart_date)} days left)`).join(', ') || 'none'}
 - ${departed.length} guests have already departed
 
+What Mois has logged most recently (use this, e.g. preferred meeting days):
+${guests.filter(g => g._lastLog && !departed.includes(g)).slice(0, 15).map(g => `- ${g.name}: "${g._lastLog.content}" (${new Date(g._lastLog.created_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})`).join('\n') || '- nothing logged yet'}
+
 Write a warm, direct morning briefing (3-4 short paragraphs, not bullet points).
 - Start with a one-line summary of the day
 - Name the 2-3 most important guests to prioritise and why
