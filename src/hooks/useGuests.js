@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { isArrivingToday } from '../lib/nextAction'
 import {
   getGuests,
   createGuest,
@@ -7,7 +8,7 @@ import {
   subscribeToGuests,
   logInteraction,
 } from '../lib/supabase'
-import { hasLeft, isToday, parseKarmaDate, karmaWeek, karmaYear } from '../lib/dates'
+import { hasLeft, parseKarmaDate, karmaWeek, karmaYear } from '../lib/dates'
 
 export function useGuests(assignedTo, staffName) {
   const [guests, setGuests] = useState([])
@@ -138,7 +139,7 @@ export function useGuests(assignedTo, staffName) {
 
   // Computed: today's arrivals
   const todayArrivals = guests.filter(g =>
-    g.arrival_date && isToday(g.arrival_date) && !(g.linked_stay || '').toLowerCase().includes('2nd')
+    isArrivingToday(g)
   )
 
   // Computed: hot leads (score >= 65)

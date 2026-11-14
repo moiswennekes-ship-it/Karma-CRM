@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { Avatar, StatusPill } from '../components/UI'
 import { ProfilePanel } from '../components/ProfilePanel'
 import { MorningBriefing } from '../components/MorningBriefing'
-import { rankGuests } from '../lib/nextAction'
-import { isToday, isInHouse, isLeavingSoon, hasLeft, tourDayKey, tourTime, baliTodayKey } from '../lib/dates'
+import { rankGuests, isArrivingToday, isInHouseNow } from '../lib/nextAction'
+import { isLeavingSoon, hasLeft, tourDayKey, tourTime, baliTodayKey } from '../lib/dates'
 
 const FILTERS = [
   { key: 'priorities', label: 'Priorities' },
@@ -21,8 +21,8 @@ export function DashboardScreen({ guests, isMobile, onGoTo, ...profileProps }) {
 
   const ranked = rankGuests(guests)
   const list = ranked.filter(({ guest: g }) => {
-    if (filter === 'arriving') return isToday(g.arrival_date)
-    if (filter === 'inhouse') return isInHouse(g.arrival_date, g.depart_date)
+    if (filter === 'arriving') return isArrivingToday(g)
+    if (filter === 'inhouse') return isInHouseNow(g)
     if (filter === 'leaving') return isLeavingSoon(g.depart_date, 2) && !hasLeft(g.depart_date)
     if (filter === 'hot') return g.status === 'Hot Lead'
     if (filter === 'tours') return g.status === 'Tour Booked'
@@ -37,8 +37,8 @@ export function DashboardScreen({ guests, isMobile, onGoTo, ...profileProps }) {
 
   // Only the counts that aren't zero
   const counts = [
-    ['Arriving today', guests.filter(g => isToday(g.arrival_date)).length, 'arriving'],
-    ['In house', guests.filter(g => isInHouse(g.arrival_date, g.depart_date)).length, 'inhouse'],
+    ['Arriving today', guests.filter(isArrivingToday).length, 'arriving'],
+    ['In house', guests.filter(isInHouseNow).length, 'inhouse'],
     ['Leaving soon', guests.filter(g => isLeavingSoon(g.depart_date, 2) && !hasLeft(g.depart_date)).length, 'leaving'],
     ['Hot leads', guests.filter(g => g.status === 'Hot Lead' && !hasLeft(g.depart_date)).length, 'hot'],
   ].filter(([, n]) => n > 0)

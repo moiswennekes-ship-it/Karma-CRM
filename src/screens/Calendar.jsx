@@ -5,6 +5,7 @@ import {
   tourDayKey, tourTime, tourLabel, tourIso, karmaWeek,
 } from '../lib/dates'
 import { logInteraction } from '../lib/supabase'
+import { isContinuingStay } from '../lib/nextAction'
 
 const BOOKABLE = ['Arriving Soon', 'Contacted']
 
@@ -32,7 +33,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
     .sort((a, b) => a.g.tour_at.localeCompare(b.g.tour_at))
 
   const daySummary = day => ({
-    ins: rows.filter(r => r.arr === day).length,
+    ins: rows.filter(r => r.arr === day && !isContinuingStay(r.g)).length,
     outs: rows.filter(r => r.dep === day).length,
     house: rows.filter(r => r.arr <= day && r.dep > day).length,
     tours: rows.filter(r => r.tourDay === day).length,
@@ -137,7 +138,7 @@ export function CalendarScreen({ guests, isMobile, onEditGuest, onOpenGuest, sta
                         borderTopRightRadius: isOut ? 14 : 0, borderBottomRightRadius: isOut ? 14 : 0,
                         fontSize: 10, fontWeight: 600,
                       }}>
-                        {isIn && !hasTour && <span style={{ color: 'var(--palm)' }}>IN</span>}
+                        {isIn && !hasTour && (isContinuingStay(g) ? <span style={{ color: 'var(--ocean)' }}><i className="ti ti-link" /> 2nd</span> : <span style={{ color: 'var(--palm)' }}>IN</span>)}
                         {isOut && !hasTour && <span style={{ color: 'var(--rose)' }}>OUT</span>}
                         {hasTour && (
                           <span style={{ background: '#9A6A1F', color: 'white', borderRadius: 10, padding: '2px 7px' }}>

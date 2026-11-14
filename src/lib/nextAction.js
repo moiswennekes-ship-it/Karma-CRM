@@ -14,6 +14,22 @@ function isSecondWeek(g) {
   return /\b\d+(st|nd|rd|th)\b/i.test(g.linked_stay || '')
 }
 
+// Already here from an earlier booking (2nd week, continuing stay): their
+// "arrival" date is just the start of the next booking, not a check-in.
+export function isContinuingStay(g) {
+  return isSecondWeek(g) || g._stayKind === 'continuing' || /\b\d+(st|nd|rd|th)\s+week/i.test(g.notes || '')
+}
+
+// Checking in today (not a continuing stay)
+export function isArrivingToday(g) {
+  return isToday(g.arrival_date) && !isContinuingStay(g)
+}
+
+// In house now, including continuing stays whose next booking starts today
+export function isInHouseNow(g) {
+  return isInHouse(g.arrival_date, g.depart_date) || (isToday(g.arrival_date) && isContinuingStay(g))
+}
+
 // Open contract or already bought on this trip: not to be pitched.
 // An open deal on the member's OTHER account doesn't block this one.
 function isOpenContract(g) {
@@ -33,8 +49,8 @@ export function nextAction(g) {
   const days = daysUntilDeparture(g.depart_date)
   const left = days === null ? '' : days === 0 ? 'leaves today' : days === 1 ? 'leaves tomorrow' : `${days} days left`
   const urgent = days !== null && days <= 2
-  const arrivingToday = isToday(g.arrival_date) && !isSecondWeek(g)
-  const inHouse = isInHouse(g.arrival_date, g.depart_date)
+  const arrivingToday = isArrivingToday(g)
+  const inHouse = isInHouseNow(g)
 
   let score = 0, action = '', reason = ''
   const notes = (g.notes || '').toLowerCase()
